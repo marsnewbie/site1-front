@@ -1,0 +1,38 @@
+/* Basic global styles for demonstration */
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  background-color: #f9f9f9;
+  color: #333;
+}
+
+a {
+  color: #0070f3;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+header, footer {
+  padding: 1rem;
+  background-color: #fff;
+  border-bottom: 1px solid #eaeaea;
+}
+
+footer {
+  border-top: 1px solid #eaeaea;
+}
+
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.cart {
+  background-color: #fff;
+  border: 1px solid #eaeaea;
+  padding: 1rem;
+}
