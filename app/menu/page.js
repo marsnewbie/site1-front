@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import Cart from '../components/Cart';
 
 export default function MenuPage() {
@@ -65,6 +66,16 @@ export default function MenuPage() {
                   .filter((i) => i.categoryId === cat.id)
                   .map((item) => (
                     <div key={item.id} style={{ background: '#fff', padding: '1rem', border: '1px solid #eaeaea', borderRadius: '4px' }}>
+                      {item.imageUrl && (
+                        <div style={{ marginBottom: '0.5rem', position: 'relative', height: '200px' }}>
+                          <Image
+                            src={item.imageUrl}
+                            alt={item.name}
+                            fill
+                            style={{ objectFit: 'cover', borderRadius: '4px' }}
+                          />
+                        </div>
+                      )}
                       <h3 style={{ margin: 0 }}>{item.name}</h3>
                       <p style={{ fontSize: '0.9rem', color: '#666' }}>{item.description}</p>
                       <p style={{ fontWeight: 'bold' }}>£{(item.price / 100).toFixed(2)}</p>
