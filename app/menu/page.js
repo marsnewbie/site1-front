@@ -13,6 +13,7 @@ export default function MenuPage() {
   const [postcode, setPostcode] = useState('');
   const [deliveryInfo, setDeliveryInfo] = useState(null);
   const [mode, setMode] = useState('collection');
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
@@ -27,6 +28,8 @@ export default function MenuPage() {
         }
       } catch (e) {
         console.error(e);
+      } finally {
+        setIsLoading(false);
       }
     }
     load();
@@ -181,18 +184,29 @@ export default function MenuPage() {
   const deliveryFee = deliveryInfo?.feePence ? deliveryInfo.feePence / 100 : 0;
   const total = subtotal / 100 + deliveryFee;
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading menu...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
+      <header className="bg-white shadow-sm border-b sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
-              <Link href="/" className="text-xl font-bold text-gray-900">
+              <Link href="/" className="text-2xl font-bold text-gray-900">
                 China Palace
               </Link>
             </div>
-            <nav className="flex space-x-8">
+            <nav className="hidden md:flex space-x-8">
               <Link href="/" className="text-gray-700 hover:text-gray-900">Home</Link>
               <Link href="/menu" className="text-gray-900 font-medium">Menu</Link>
               <Link href="/checkout" className="text-gray-700 hover:text-gray-900">Checkout</Link>
@@ -203,21 +217,24 @@ export default function MenuPage() {
 
       <div className="flex">
         {/* Left Sidebar - Categories */}
-        <div className="w-64 bg-white shadow-sm min-h-screen">
+        <div className="w-64 bg-white shadow-sm min-h-screen sticky top-16">
           <div className="p-4">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Menu Categories</h2>
-            <div className="space-y-2">
+            <div className="space-y-1">
               {data.categories.map((cat) => (
                 <button
                   key={cat.id}
                   onClick={() => setActiveCategory(cat.id)}
-                  className={`w-full text-left px-3 py-2 rounded-md transition-colors ${
+                  className={`w-full text-left px-4 py-3 rounded-lg transition-all duration-200 ${
                     activeCategory === cat.id
-                      ? 'bg-green-600 text-white'
-                      : 'text-gray-700 hover:bg-gray-100'
+                      ? 'bg-green-600 text-white shadow-md'
+                      : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
                   }`}
                 >
-                  {cat.name}
+                  <div className="font-medium">{cat.name}</div>
+                  <div className="text-sm opacity-75">
+                    {data.items.filter(item => item.categoryId === cat.id).length} items
+                  </div>
                 </button>
               ))}
             </div>
@@ -226,37 +243,67 @@ export default function MenuPage() {
 
         {/* Main Content - Menu Items */}
         <div className="flex-1 p-6">
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Online Menu</h1>
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Our Menu</h1>
             <p className="text-gray-600">Choose from our delicious selection of authentic Chinese cuisine</p>
           </div>
 
           {activeCategory && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="space-y-6">
               {data.items
                 .filter((i) => i.categoryId === activeCategory)
                 .map((item) => (
-                  <div key={item.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
-                    {item.imageUrl && (
-                      <div className="relative h-48">
-                        <Image
-                          src={item.imageUrl}
-                          alt={item.name}
-                          fill
-                          className="object-cover"
-                        />
+                  <div key={item.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+                    <div className="flex">
+                      {/* Item Image */}
+                      <div className="w-32 h-32 md:w-40 md:h-40 flex-shrink-0">
+                        {item.imageUrl ? (
+                          <Image
+                            src={item.imageUrl}
+                            alt={item.name}
+                            width={160}
+                            height={160}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center">
+                            <span className="text-3xl">🍜</span>
+                          </div>
+                        )}
                       </div>
-                    )}
-                    <div className="p-6">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">{item.name}</h3>
-                      <p className="text-gray-600 text-sm mb-4">{item.description}</p>
-                      <div className="flex justify-between items-center">
-                        <span className="text-xl font-bold text-green-600">
-                          £{(item.price / 100).toFixed(2)}
-                        </span>
+                      
+                      {/* Item Details */}
+                      <div className="flex-1 p-6">
+                        <div className="flex justify-between items-start mb-2">
+                          <h3 className="text-xl font-semibold text-gray-900">{item.name}</h3>
+                          <span className="text-2xl font-bold text-green-600">
+                            £{(item.price / 100).toFixed(2)}
+                          </span>
+                        </div>
+                        
+                        <p className="text-gray-600 mb-4 line-clamp-2">{item.description}</p>
+                        
+                        {item.options && item.options.length > 0 && (
+                          <div className="mb-4">
+                            <div className="text-sm text-gray-500 mb-2">Customization available</div>
+                            <div className="flex flex-wrap gap-2">
+                              {item.options.slice(0, 3).map((option, idx) => (
+                                <span key={idx} className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full">
+                                  {option.name}
+                                </span>
+                              ))}
+                              {item.options.length > 3 && (
+                                <span className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full">
+                                  +{item.options.length - 3} more
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        
                         <button 
                           onClick={() => openOptionsModal(item)}
-                          className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors"
+                          className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors font-medium"
                         >
                           Add to Cart
                         </button>
@@ -269,12 +316,12 @@ export default function MenuPage() {
         </div>
 
         {/* Right Sidebar - Cart */}
-        <div className="w-80 bg-white shadow-sm min-h-screen">
-          <div className="p-4">
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">Your Order</h3>
+        <div className="w-80 bg-white shadow-sm min-h-screen sticky top-16">
+          <div className="p-6">
+            <h3 className="text-xl font-semibold text-gray-900 mb-6">Your Order</h3>
             
             {/* Delivery/Collection Mode */}
-            <div className="mb-4">
+            <div className="mb-6">
               <div className="flex space-x-4">
                 <label className="flex items-center">
                   <input
@@ -303,8 +350,8 @@ export default function MenuPage() {
 
             {/* Delivery Postcode Check */}
             {mode === 'delivery' && (
-              <div className="mb-4 p-3 bg-gray-50 rounded-md">
-                <div className="flex space-x-2 mb-2">
+              <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+                <div className="flex space-x-2 mb-3">
                   <input
                     type="text"
                     value={postcode}
@@ -330,13 +377,17 @@ export default function MenuPage() {
             )}
 
             {/* Cart Items */}
-            <div className="space-y-3 mb-4">
+            <div className="space-y-4 mb-6">
               {cartItems.length === 0 ? (
-                <p className="text-gray-500 text-center py-4">Your cart is empty</p>
+                <div className="text-center py-8">
+                  <div className="text-4xl mb-4">🛒</div>
+                  <p className="text-gray-500">Your cart is empty</p>
+                  <p className="text-sm text-gray-400">Add some delicious items to get started</p>
+                </div>
               ) : (
                 cartItems.map((item, idx) => (
-                  <div key={idx} className="border-b border-gray-200 pb-3">
-                    <div className="flex justify-between items-start mb-1">
+                  <div key={idx} className="border border-gray-200 rounded-lg p-4">
+                    <div className="flex justify-between items-start mb-2">
                       <div className="flex-1">
                         <h4 className="font-medium text-gray-900">{item.name}</h4>
                         {item.options && item.options.length > 0 && (
@@ -358,19 +409,19 @@ export default function MenuPage() {
                       <div className="flex items-center space-x-2">
                         <button 
                           onClick={() => updateQuantity(idx, item.qty - 1)}
-                          className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center hover:bg-gray-300"
+                          className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center hover:bg-gray-300 transition-colors"
                         >
                           -
                         </button>
-                        <span className="w-8 text-center">{item.qty}</span>
+                        <span className="w-8 text-center font-medium">{item.qty}</span>
                         <button 
                           onClick={() => updateQuantity(idx, item.qty + 1)}
-                          className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center hover:bg-gray-300"
+                          className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center hover:bg-gray-300 transition-colors"
                         >
                           +
                         </button>
                       </div>
-                      <span className="font-medium">
+                      <span className="font-semibold text-lg">
                         £{((item.price * item.qty) / 100).toFixed(2)}
                       </span>
                     </div>
@@ -381,18 +432,18 @@ export default function MenuPage() {
 
             {/* Order Summary */}
             {cartItems.length > 0 && (
-              <div className="border-t border-gray-200 pt-4 space-y-2">
-                <div className="flex justify-between">
+              <div className="border-t border-gray-200 pt-4 space-y-3">
+                <div className="flex justify-between text-sm">
                   <span>Subtotal</span>
                   <span>£{(subtotal / 100).toFixed(2)}</span>
                 </div>
                 {mode === 'delivery' && deliveryInfo?.isDeliverable && (
-                  <div className="flex justify-between">
+                  <div className="flex justify-between text-sm">
                     <span>Delivery</span>
                     <span>£{deliveryFee.toFixed(2)}</span>
                   </div>
                 )}
-                <div className="flex justify-between font-semibold text-lg border-t border-gray-200 pt-2">
+                <div className="flex justify-between font-semibold text-lg border-t border-gray-200 pt-3">
                   <span>Total</span>
                   <span>£{total.toFixed(2)}</span>
                 </div>
@@ -404,7 +455,7 @@ export default function MenuPage() {
               <button 
                 disabled={cartItems.length === 0} 
                 onClick={() => (window.location.href = '/checkout')}
-                className="w-full bg-green-600 text-white py-3 px-4 rounded-md hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                className="w-full bg-green-600 text-white py-4 px-6 rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-semibold text-lg"
               >
                 {cartItems.length === 0 ? 'Cart Empty' : 'Proceed to Checkout'}
               </button>
@@ -415,46 +466,48 @@ export default function MenuPage() {
 
       {/* Options Modal */}
       {showOptionsModal && selectedItem && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xl font-semibold">{selectedItem.name}</h3>
                 <button 
                   onClick={closeOptionsModal}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-gray-400 hover:text-gray-600 p-2"
                 >
                   ✕
                 </button>
               </div>
               
-              <p className="text-gray-600 mb-4">{selectedItem.description}</p>
+              <p className="text-gray-600 mb-6">{selectedItem.description}</p>
               
-              <div className="space-y-4">
+              <div className="space-y-6">
                 {selectedItem.options.map((option) => (
-                  <div key={option.id} className="border-b pb-4">
-                    <h4 className="font-medium mb-2">
+                  <div key={option.id} className="border-b border-gray-200 pb-6">
+                    <h4 className="font-semibold mb-3 flex items-center">
                       {option.name}
-                      {option.required && <span className="text-red-500 ml-1">*</span>}
+                      {option.required && <span className="text-red-500 ml-2 text-sm">*Required</span>}
                     </h4>
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       {option.choices.map((choice) => (
-                        <label key={choice.id} className="flex items-center">
-                          <input
-                            type={option.type}
-                            name={option.id}
-                            value={choice.id}
-                            checked={
-                              option.type === 'radio' 
-                                ? selectedOptions[option.id] === choice.id
-                                : selectedOptions[option.id]?.includes(choice.id)
-                            }
-                            onChange={() => handleOptionChange(option.id, choice.id, option.type)}
-                            className="mr-2"
-                          />
-                          <span className="flex-1">{choice.name}</span>
+                        <label key={choice.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                          <div className="flex items-center">
+                            <input
+                              type={option.type}
+                              name={option.id}
+                              value={choice.id}
+                              checked={
+                                option.type === 'radio' 
+                                  ? selectedOptions[option.id] === choice.id
+                                  : selectedOptions[option.id]?.includes(choice.id)
+                              }
+                              onChange={() => handleOptionChange(option.id, choice.id, option.type)}
+                              className="mr-3"
+                            />
+                            <span className="font-medium">{choice.name}</span>
+                          </div>
                           {choice.priceDelta > 0 && (
-                            <span className="text-green-600 font-medium">
+                            <span className="text-green-600 font-semibold">
                               +£{(choice.priceDelta / 100).toFixed(2)}
                             </span>
                           )}
@@ -465,8 +518,8 @@ export default function MenuPage() {
                 ))}
               </div>
 
-              <div className="mt-6 flex justify-between items-center">
-                <span className="text-lg font-semibold">
+              <div className="mt-6 flex justify-between items-center pt-4 border-t border-gray-200">
+                <span className="text-xl font-bold">
                   Total: £{((selectedItem.price + 
                     selectedItem.options.reduce((total, opt) => {
                       if (selectedOptions[opt.id]) {
@@ -484,7 +537,7 @@ export default function MenuPage() {
                 </span>
                 <button
                   onClick={addItemWithOptions}
-                  className="bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700"
+                  className="bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700 transition-colors font-semibold"
                 >
                   Add to Cart
                 </button>
@@ -493,37 +546,6 @@ export default function MenuPage() {
           </div>
         </div>
       )}
-
-      {/* Footer */}
-      <footer className="bg-gray-800 text-white mt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Address</h3>
-              <p>12 Barnsley Road, Hemsworth</p>
-              <p>Pontefract, WF9 4PY</p>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Opening Hours</h3>
-              <p>Monday: 12:00-15:00, 17:00-23:00</p>
-              <p>Tuesday: Closed</p>
-              <p>Wednesday: 12:00-15:00, 17:00-23:00</p>
-              <p>Thursday: 12:00-15:00, 17:00-23:00</p>
-              <p>Friday: 16:00-00:00</p>
-              <p>Saturday: 16:00-00:00</p>
-              <p>Sunday: 16:00-00:00</p>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Contact</h3>
-              <p>Call: 01977 123456</p>
-              <p>All credit cards accepted</p>
-            </div>
-          </div>
-          <div className="mt-8 pt-8 border-t border-gray-700 text-center">
-            <p>China Palace © 2025. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }
