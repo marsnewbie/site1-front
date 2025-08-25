@@ -51,11 +51,32 @@ export default function CheckoutPage() {
     loadStoreConfig();
   }, []);
 
-  // On mount, read cart from sessionStorage (passed from menu page)
+  // On mount, read cart and order details from sessionStorage (passed from menu page)
   useEffect(() => {
     const stored = sessionStorage.getItem('cart');
     if (stored) {
       setCartItems(JSON.parse(stored));
+    }
+
+    // Load saved delivery mode from menu page
+    const savedMode = sessionStorage.getItem('orderMode');
+    if (savedMode) {
+      setMode(savedMode);
+    }
+
+    // Load saved postcode and delivery info from menu page
+    const savedPostcode = sessionStorage.getItem('postcode');
+    const savedDeliveryInfo = sessionStorage.getItem('deliveryInfo');
+    if (savedPostcode) {
+      setContact(prev => ({ ...prev, postcode: savedPostcode }));
+    }
+    if (savedDeliveryInfo) {
+      try {
+        const deliveryInfo = JSON.parse(savedDeliveryInfo);
+        setQuote(deliveryInfo);
+      } catch (e) {
+        console.error('Error loading delivery info from sessionStorage:', e);
+      }
     }
   }, []);
 
@@ -67,24 +88,33 @@ export default function CheckoutPage() {
   const validateForm = () => {
     const errors = {};
 
-    // Required fields for all users
-    if (!contact.firstName.trim()) errors.firstName = 'First name is required';
-    if (!contact.email.trim()) {
-      errors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(contact.email)) {
-      errors.email = 'Please enter a valid email address';
-    }
-    if (!contact.phone.trim()) errors.phone = 'Phone number is required';
+    // Required fields for all users (guest checkout)
+    if (accountType === 'guest') {
+      if (!contact.firstName.trim()) errors.firstName = 'First name is required';
+      if (!contact.email.trim()) {
+        errors.email = 'Email is required';
+      } else if (!/\S+@\S+\.\S+/.test(contact.email)) {
+        errors.email = 'Please enter a valid email address';
+      }
+      if (!contact.phone.trim()) errors.phone = 'Phone number is required';
 
-    // Additional fields for delivery
-    if (mode === 'delivery') {
-      if (!contact.postcode.trim()) errors.postcode = 'Postcode is required';
-      if (!contact.street.trim()) errors.street = 'Street name is required';
+      // Additional required fields for delivery
+      if (mode === 'delivery') {
+        if (!contact.postcode.trim()) errors.postcode = 'Postcode is required for delivery';
+        if (!contact.street.trim()) errors.street = 'Street name is required for delivery';
+      }
     }
 
     // Additional fields for new account
     if (accountType === 'new') {
+      if (!contact.firstName.trim()) errors.firstName = 'First name is required';
       if (!contact.lastName.trim()) errors.lastName = 'Last name is required';
+      if (!contact.email.trim()) {
+        errors.email = 'Email is required';
+      } else if (!/\S+@\S+\.\S+/.test(contact.email)) {
+        errors.email = 'Please enter a valid email address';
+      }
+      if (!contact.phone.trim()) errors.phone = 'Phone number is required';
       if (!contact.postcode.trim()) errors.postcode = 'Postcode is required';
       if (!contact.street.trim()) errors.street = 'Street name is required';
     }
@@ -153,8 +183,11 @@ export default function CheckoutPage() {
       const data = await res.json();
       if (data.ok) {
         setMessage(`Order ${data.orderId} placed successfully!`);
-        // clear cart
+        // Clear all order-related session storage
         sessionStorage.removeItem('cart');
+        sessionStorage.removeItem('orderMode');
+        sessionStorage.removeItem('postcode');
+        sessionStorage.removeItem('deliveryInfo');
         setCartItems([]);
       } else {
         setMessage('Error placing order');
@@ -316,14 +349,14 @@ export default function CheckoutPage() {
                     className="bg-red-600 text-white p-3 cursor-pointer font-bold rounded"
                     onClick={() => setAccountType('guest')}
                   >
-                    I'm A Guest
+                    Checkout As A Guest
                   </summary>
                   <div className="panel-body p-4 bg-white border-t border-gray-300">
                     <div className="alert alert-warning text-sm text-red-600 mb-4 p-3 bg-red-50 rounded">
                       Using a guest account means you cannot track your orders, earn reward points, or access account‑only features.
                     </div>
                     <div className="form-group mb-4">
-                      <label htmlFor="guest-first-name" className="block mb-2 font-semibold">First Name<span className="text-red-500">*</span></label>
+                      <label htmlFor="guest-first-name" className="block mb-2 font-semibold">*First Name</label>
                       <input 
                         type="text" 
                         id="guest-first-name" 
@@ -335,7 +368,19 @@ export default function CheckoutPage() {
                       {formErrors.firstName && <div className="text-red-500 text-sm mt-1">{formErrors.firstName}</div>}
                     </div>
                     <div className="form-group mb-4">
-                      <label htmlFor="guest-email" className="block mb-2 font-semibold">E‑Mail<span className="text-red-500">*</span></label>
+                      <label htmlFor="guest-last-name" className="block mb-2 font-semibold">Last Name</label>
+                      <input 
+                        type="text" 
+                        id="guest-last-name" 
+                        value={contact.lastName}
+                        onChange={(e) => setContact({...contact, lastName: e.target.value})}
+                        className={`w-full p-2 border rounded ${formErrors.lastName ? 'border-red-500' : 'border-gray-300'}`}
+                        placeholder="Last Name"
+                      />
+                      {formErrors.lastName && <div className="text-red-500 text-sm mt-1">{formErrors.lastName}</div>}
+                    </div>
+                    <div className="form-group mb-4">
+                      <label htmlFor="guest-email" className="block mb-2 font-semibold">*E‑Mail</label>
                       <input 
                         type="email" 
                         id="guest-email" 
@@ -347,7 +392,7 @@ export default function CheckoutPage() {
                       {formErrors.email && <div className="text-red-500 text-sm mt-1">{formErrors.email}</div>}
                     </div>
                     <div className="form-group mb-4">
-                      <label htmlFor="guest-phone" className="block mb-2 font-semibold">Telephone<span className="text-red-500">*</span></label>
+                      <label htmlFor="guest-phone" className="block mb-2 font-semibold">*Telephone</label>
                       <input 
                         type="text" 
                         id="guest-phone" 
@@ -358,33 +403,56 @@ export default function CheckoutPage() {
                       />
                       {formErrors.phone && <div className="text-red-500 text-sm mt-1">{formErrors.phone}</div>}
                     </div>
-                    {mode === 'delivery' && (
-                      <>
-                        <div className="form-group mb-4">
-                          <label htmlFor="guest-postcode" className="block mb-2 font-semibold">Post Code</label>
-                          <input 
-                            type="text" 
-                            id="guest-postcode" 
-                            value={contact.postcode}
-                            onChange={(e) => setContact({...contact, postcode: e.target.value})}
-                            className={`w-full p-2 border rounded ${formErrors.postcode ? 'border-red-500' : 'border-gray-300'}`}
-                            placeholder="Post Code"
-                          />
-                          {formErrors.postcode && <div className="text-red-500 text-sm mt-1">{formErrors.postcode}</div>}
-                        </div>
-                        <div className="form-group mb-4">
-                          <label htmlFor="guest-address" className="block mb-2 font-semibold">Address</label>
-                          <input 
-                            type="text" 
-                            id="guest-address" 
-                            value={contact.address}
-                            onChange={(e) => setContact({...contact, address: e.target.value})}
-                            className="w-full p-2 border border-gray-300 rounded"
-                            placeholder="Address"
-                          />
-                        </div>
-                      </>
-                    )}
+                    <div className="form-group mb-4">
+                      <label htmlFor="guest-postcode" className="block mb-2 font-semibold">
+                        Post Code{mode === 'delivery' ? <span className="text-red-500">*</span> : ''}:
+                      </label>
+                      <input 
+                        type="text" 
+                        id="guest-postcode" 
+                        value={contact.postcode}
+                        onChange={(e) => setContact({...contact, postcode: e.target.value})}
+                        className={`w-full p-2 border rounded ${formErrors.postcode ? 'border-red-500' : 'border-gray-300'}`}
+                        placeholder="Post Code"
+                      />
+                      {formErrors.postcode && <div className="text-red-500 text-sm mt-1">{formErrors.postcode}</div>}
+                    </div>
+                    <div className="form-group mb-4">
+                      <label htmlFor="guest-address" className="block mb-2 font-semibold">Address:</label>
+                      <input 
+                        type="text" 
+                        id="guest-address" 
+                        value={contact.address}
+                        onChange={(e) => setContact({...contact, address: e.target.value})}
+                        className="w-full p-2 border border-gray-300 rounded"
+                        placeholder="Address"
+                      />
+                    </div>
+                    <div className="form-group mb-4">
+                      <label htmlFor="guest-street" className="block mb-2 font-semibold">
+                        Street Name{mode === 'delivery' ? <span className="text-red-500">*</span> : ''}:
+                      </label>
+                      <input 
+                        type="text" 
+                        id="guest-street" 
+                        value={contact.street}
+                        onChange={(e) => setContact({...contact, street: e.target.value})}
+                        className={`w-full p-2 border rounded ${formErrors.street ? 'border-red-500' : 'border-gray-300'}`}
+                        placeholder="Street Name"
+                      />
+                      {formErrors.street && <div className="text-red-500 text-sm mt-1">{formErrors.street}</div>}
+                    </div>
+                    <div className="form-group mb-4">
+                      <label htmlFor="guest-city" className="block mb-2 font-semibold">City:</label>
+                      <input 
+                        type="text" 
+                        id="guest-city" 
+                        value={contact.city}
+                        onChange={(e) => setContact({...contact, city: e.target.value})}
+                        className="w-full p-2 border border-gray-300 rounded"
+                        placeholder="City"
+                      />
+                    </div>
                     <p className="text-sm">Not now, I will create an account later <Link href="/register" className="text-red-600 hover:text-red-800">Create An Account</Link></p>
                   </div>
                 </details>

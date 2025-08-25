@@ -16,6 +16,7 @@ export default function MenuPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [requestedTime, setRequestedTime] = useState('ASAP');
   const [storeConfig, setStoreConfig] = useState(null);
+  const [openingHours, setOpeningHours] = useState(null);
 
   // Load store configuration from database
   useEffect(() => {
@@ -57,6 +58,27 @@ export default function MenuPage() {
     loadStoreConfig();
   }, []);
 
+  // Load opening hours for today
+  useEffect(() => {
+    async function loadOpeningHours() {
+      try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://site1-backend-production.up.railway.app';
+        const res = await fetch(apiUrl + '/api/store/hours');
+        
+        if (res.ok) {
+          const hours = await res.json();
+          console.log('Opening hours loaded:', hours);
+          setOpeningHours(hours);
+        } else {
+          console.error('Opening hours API error:', res.status, res.statusText);
+        }
+      } catch (e) {
+        console.error('Error loading opening hours:', e);
+      }
+    }
+    loadOpeningHours();
+  }, []);
+
   // Load cart from sessionStorage on component mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -68,8 +90,57 @@ export default function MenuPage() {
           console.error('Error loading cart from sessionStorage:', e);
         }
       }
+
+      // Load saved delivery mode
+      const savedMode = sessionStorage.getItem('orderMode');
+      if (savedMode) {
+        setMode(savedMode);
+      }
+
+      // Load saved postcode and delivery info
+      const savedPostcode = sessionStorage.getItem('postcode');
+      const savedDeliveryInfo = sessionStorage.getItem('deliveryInfo');
+      if (savedPostcode) {
+        setPostcode(savedPostcode);
+      }
+      if (savedDeliveryInfo) {
+        try {
+          setDeliveryInfo(JSON.parse(savedDeliveryInfo));
+        } catch (e) {
+          console.error('Error loading delivery info from sessionStorage:', e);
+        }
+      }
     }
   }, []);
+
+  // Save delivery mode to sessionStorage when it changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('orderMode', mode);
+    }
+  }, [mode]);
+
+  // Save postcode to sessionStorage when it changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      if (postcode) {
+        sessionStorage.setItem('postcode', postcode);
+      } else {
+        sessionStorage.removeItem('postcode');
+      }
+    }
+  }, [postcode]);
+
+  // Save delivery info to sessionStorage when it changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      if (deliveryInfo) {
+        sessionStorage.setItem('deliveryInfo', JSON.stringify(deliveryInfo));
+      } else {
+        sessionStorage.removeItem('deliveryInfo');
+      }
+    }
+  }, [deliveryInfo]);
 
   // Generate time slots based on current time and store config
   const generateTimeSlots = (mode) => {
@@ -79,112 +150,81 @@ export default function MenuPage() {
     const currentTime = now.getHours() * 60 + now.getMinutes(); // Current time in minutes
     const currentDay = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
     
-    // For now, using simplified logic based on store config
-    // In a full implementation, you would fetch opening hours from /api/store/hours
-    const todayOpenTime = 16 * 60; // 16:00 in minutes (Friday/Saturday/Sunday)
-    const todayCloseTime = 23 * 60; // 23:00 in minutes
+    // Get preparation time based on mode
+    const prepTime = mode === 'collection' 
+      ? storeConfig.collection_lead_time_minutes 
+      : storeConfig.delivery_lead_time_minutes;
     
-    // Adjust for different days based on seed data
-    if (currentDay >= 1 && currentDay <= 4) { // Monday to Thursday
-      // Check if it's lunch time (12:00-15:00) or dinner time (17:00-23:00)
-      const lunchStart = 12 * 60; // 12:00
-      const lunchEnd = 15 * 60;   // 15:00
-      const dinnerStart = 17 * 60; // 17:00
-      const dinnerEnd = 23 * 60;   // 23:00
-      
-      if (currentTime >= lunchStart && currentTime < lunchEnd) {
-        // Lunch time
-        const timeSlots = ['ASAP'];
-        const interval = mode === 'collection' 
-          ? storeConfig.collection_lead_time_minutes 
-          : storeConfig.delivery_lead_time_minutes;
-        
-        const bufferMinutes = mode === 'collection'
-          ? storeConfig.collection_buffer_before_close_minutes
-          : storeConfig.delivery_buffer_before_close_minutes;
-        
-        let startTime = Math.ceil(currentTime / interval) * interval;
-        const latestTime = lunchEnd - bufferMinutes;
-        
-        for (let time = startTime; time < latestTime; time += interval) {
-          const hours = Math.floor(time / 60);
-          const minutes = time % 60;
-          const ampm = hours >= 12 ? 'PM' : 'AM';
-          const displayHours = hours > 12 ? hours - 12 : hours === 0 ? 12 : hours;
-          const displayMinutes = minutes.toString().padStart(2, '0');
-          
-          const timeString = `${displayHours}:${displayMinutes} ${ampm}`;
-          timeSlots.push(timeString);
-        }
-        return timeSlots;
-      } else if (currentTime >= dinnerStart && currentTime < dinnerEnd) {
-        // Dinner time
-        const timeSlots = ['ASAP'];
-        const interval = mode === 'collection' 
-          ? storeConfig.collection_lead_time_minutes 
-          : storeConfig.delivery_lead_time_minutes;
-        
-        const bufferMinutes = mode === 'collection'
-          ? storeConfig.collection_buffer_before_close_minutes
-          : storeConfig.delivery_buffer_before_close_minutes;
-        
-        let startTime = Math.ceil(currentTime / interval) * interval;
-        const latestTime = dinnerEnd - bufferMinutes;
-        
-        for (let time = startTime; time < latestTime; time += interval) {
-          const hours = Math.floor(time / 60);
-          const minutes = time % 60;
-          const ampm = hours >= 12 ? 'PM' : 'AM';
-          const displayHours = hours > 12 ? hours - 12 : hours === 0 ? 12 : hours;
-          const displayMinutes = minutes.toString().padStart(2, '0');
-          
-          const timeString = `${displayHours}:${displayMinutes} ${ampm}`;
-          timeSlots.push(timeString);
-        }
-        return timeSlots;
-      } else {
-        // Outside opening hours
-        return ['ASAP'];
-      }
+    const bufferMinutes = mode === 'collection'
+      ? storeConfig.collection_buffer_before_close_minutes
+      : storeConfig.delivery_buffer_before_close_minutes;
+    
+    // Define opening hours based on seed data
+    let openingPeriods = [];
+    
+    if (currentDay >= 1 && currentDay <= 4 && currentDay !== 2) { // Mon, Wed, Thu (not Tue)
+      openingPeriods = [
+        { start: 12 * 60, end: 15 * 60 }, // Lunch: 12:00-15:00
+        { start: 17 * 60, end: 23 * 60 }  // Dinner: 17:00-23:00
+      ];
     } else if (currentDay === 2) { // Tuesday - closed
-      return ['ASAP'];
-    } else {
-      // Friday, Saturday, Sunday - 16:00-00:00
-      const timeSlots = ['ASAP'];
-      const interval = mode === 'collection' 
-        ? storeConfig.collection_lead_time_minutes 
-        : storeConfig.delivery_lead_time_minutes;
-      
-      const bufferMinutes = mode === 'collection'
-        ? storeConfig.collection_buffer_before_close_minutes
-        : storeConfig.delivery_buffer_before_close_minutes;
-      
-      // Determine start time
-      let startTime;
-      if (currentTime < todayOpenTime) {
-        // Before opening - start from opening time
-        startTime = todayOpenTime;
+      return ['ASAP']; // Store closed, only show ASAP
+    } else if (currentDay === 0 || currentDay === 5 || currentDay === 6) { // Sun, Fri, Sat
+      openingPeriods = [
+        { start: 16 * 60, end: 24 * 60 } // 16:00-00:00 (24:00)
+      ];
+    }
+    
+    const timeSlots = ['ASAP'];
+    
+    // For each opening period, calculate available time slots
+    openingPeriods.forEach(period => {
+      // Calculate earliest available time
+      let earliestTime;
+      if (currentTime < period.start) {
+        // Before opening: earliest is opening time + prep time
+        earliestTime = period.start + prepTime;
+      } else if (currentTime >= period.start && currentTime < period.end) {
+        // During opening hours: earliest is current time + prep time
+        earliestTime = currentTime + prepTime;
       } else {
-        // After opening - start from current time + interval
-        startTime = Math.ceil(currentTime / interval) * interval;
+        // After closing: skip this period
+        return;
       }
       
-      // Generate time slots until closing time minus buffer
-      const latestTime = todayCloseTime - bufferMinutes;
+      // Calculate latest available time (closing time - buffer)
+      const latestTime = period.end - bufferMinutes;
       
-      for (let time = startTime; time < latestTime; time += interval) {
-        const hours = Math.floor(time / 60);
-        const minutes = time % 60;
+      // Generate 15-minute interval slots
+      const interval = 15;
+      let slotTime = Math.ceil(earliestTime / interval) * interval;
+      
+      while (slotTime <= latestTime) {
+        let hours = Math.floor(slotTime / 60);
+        const minutes = slotTime % 60;
+        
+        // Handle midnight (24:00 = 0:00 next day)
+        if (hours >= 24) {
+          hours = hours - 24;
+        }
+        
+        // Format time display
         const ampm = hours >= 12 ? 'PM' : 'AM';
-        const displayHours = hours > 12 ? hours - 12 : hours === 0 ? 12 : hours;
+        const displayHours = hours === 0 ? 12 : (hours > 12 ? hours - 12 : hours);
         const displayMinutes = minutes.toString().padStart(2, '0');
         
         const timeString = `${displayHours}:${displayMinutes} ${ampm}`;
-        timeSlots.push(timeString);
+        
+        // Avoid duplicates
+        if (!timeSlots.includes(timeString)) {
+          timeSlots.push(timeString);
+        }
+        
+        slotTime += interval;
       }
-      
-      return timeSlots;
-    }
+    });
+    
+    return timeSlots;
   };
 
   // Add CSS styles for the menu layout
@@ -431,8 +471,8 @@ export default function MenuPage() {
         border: 1px solid #f5c6cb;
       }
       .row { display: flex; flex-wrap: wrap; }
-      .col-md-3 { flex: 0 0 25%; max-width: 25%; padding: 0 15px; }
-      .col-md-6 { flex: 0 0 50%; max-width: 50%; padding: 0 15px; }
+      .col-md-3 { flex: 0 0 27.5%; max-width: 27.5%; padding: 0 15px; }
+      .col-md-6 { flex: 0 0 45%; max-width: 45%; padding: 0 15px; }
       @media (max-width: 768px) {
         .col-md-3, .col-md-6 { flex: 0 0 100%; max-width: 100%; }
         .order-panel { position: static; }
@@ -762,6 +802,16 @@ export default function MenuPage() {
           <div className="col-md-3">
             <aside className="order-panel">
               <h4>Your Order</h4>
+              {/* Opening Hours Display */}
+              {openingHours && (
+                <div className="opening-hours-display text-center mb-3 p-2 bg-gray-100 rounded text-sm">
+                  <div className="font-medium text-gray-700">Today's Hours:</div>
+                  <div className="text-gray-600">
+                    {openingHours.is_closed ? 'Closed' : 
+                     openingHours.hours.map(h => h.formatted).join(', ')}
+                  </div>
+                </div>
+              )}
               
               {/* Delivery/Collection Mode */}
               <div className="option-row">
@@ -881,6 +931,20 @@ export default function MenuPage() {
               )}
 
               {/* Checkout Button */}
+              {mode === 'delivery' && cartItems.length > 0 && (!deliveryInfo || !deliveryInfo.isDeliverable) && (
+                <div className="mb-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800">
+                  {!postcode ? 
+                    'Please enter your postcode and click "Check" to verify delivery availability before checkout.' :
+                    (!deliveryInfo ? 
+                      'Please click "Check" to verify your postcode for delivery.' :
+                      (!deliveryInfo.isDeliverable ? 
+                        `Delivery not available: ${deliveryInfo.reason}` :
+                        ''
+                      )
+                    )
+                  }
+                </div>
+              )}
               <button 
                 className="checkout-btn"
                 disabled={cartItems.length === 0 || (mode === 'delivery' && (!deliveryInfo || !deliveryInfo.isDeliverable))}
