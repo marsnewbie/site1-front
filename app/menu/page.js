@@ -48,45 +48,112 @@ export default function MenuPage() {
     const currentTime = now.getHours() * 60 + now.getMinutes(); // Current time in minutes
     const currentDay = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
     
-    // Get today's opening hours from database
-    // For now, using simplified logic - you can enhance this to use actual opening hours
-    const todayOpenTime = 16 * 60; // 16:00 in minutes
+    // For now, using simplified logic based on store config
+    // In a full implementation, you would fetch opening hours from /api/store/hours
+    const todayOpenTime = 16 * 60; // 16:00 in minutes (Friday/Saturday/Sunday)
     const todayCloseTime = 23 * 60; // 23:00 in minutes
     
-    const timeSlots = ['ASAP'];
-    const interval = mode === 'collection' 
-      ? storeConfig.collection_lead_time_minutes 
-      : storeConfig.delivery_lead_time_minutes;
-    
-    const bufferMinutes = mode === 'collection'
-      ? storeConfig.collection_buffer_before_close_minutes
-      : storeConfig.delivery_buffer_before_close_minutes;
-    
-    // Determine start time
-    let startTime;
-    if (currentTime < todayOpenTime) {
-      // Before opening - start from opening time
-      startTime = todayOpenTime;
-    } else {
-      // After opening - start from current time + interval
-      startTime = Math.ceil(currentTime / interval) * interval;
-    }
-    
-    // Generate time slots until closing time minus buffer
-    const latestTime = todayCloseTime - bufferMinutes;
-    
-    for (let time = startTime; time < latestTime; time += interval) {
-      const hours = Math.floor(time / 60);
-      const minutes = time % 60;
-      const ampm = hours >= 12 ? 'PM' : 'AM';
-      const displayHours = hours > 12 ? hours - 12 : hours === 0 ? 12 : hours;
-      const displayMinutes = minutes.toString().padStart(2, '0');
+    // Adjust for different days based on seed data
+    if (currentDay >= 1 && currentDay <= 4) { // Monday to Thursday
+      // Check if it's lunch time (12:00-15:00) or dinner time (17:00-23:00)
+      const lunchStart = 12 * 60; // 12:00
+      const lunchEnd = 15 * 60;   // 15:00
+      const dinnerStart = 17 * 60; // 17:00
+      const dinnerEnd = 23 * 60;   // 23:00
       
-      const timeString = `${displayHours}:${displayMinutes} ${ampm}`;
-      timeSlots.push(timeString);
+      if (currentTime >= lunchStart && currentTime < lunchEnd) {
+        // Lunch time
+        const timeSlots = ['ASAP'];
+        const interval = mode === 'collection' 
+          ? storeConfig.collection_lead_time_minutes 
+          : storeConfig.delivery_lead_time_minutes;
+        
+        const bufferMinutes = mode === 'collection'
+          ? storeConfig.collection_buffer_before_close_minutes
+          : storeConfig.delivery_buffer_before_close_minutes;
+        
+        let startTime = Math.ceil(currentTime / interval) * interval;
+        const latestTime = lunchEnd - bufferMinutes;
+        
+        for (let time = startTime; time < latestTime; time += interval) {
+          const hours = Math.floor(time / 60);
+          const minutes = time % 60;
+          const ampm = hours >= 12 ? 'PM' : 'AM';
+          const displayHours = hours > 12 ? hours - 12 : hours === 0 ? 12 : hours;
+          const displayMinutes = minutes.toString().padStart(2, '0');
+          
+          const timeString = `${displayHours}:${displayMinutes} ${ampm}`;
+          timeSlots.push(timeString);
+        }
+        return timeSlots;
+      } else if (currentTime >= dinnerStart && currentTime < dinnerEnd) {
+        // Dinner time
+        const timeSlots = ['ASAP'];
+        const interval = mode === 'collection' 
+          ? storeConfig.collection_lead_time_minutes 
+          : storeConfig.delivery_lead_time_minutes;
+        
+        const bufferMinutes = mode === 'collection'
+          ? storeConfig.collection_buffer_before_close_minutes
+          : storeConfig.delivery_buffer_before_close_minutes;
+        
+        let startTime = Math.ceil(currentTime / interval) * interval;
+        const latestTime = dinnerEnd - bufferMinutes;
+        
+        for (let time = startTime; time < latestTime; time += interval) {
+          const hours = Math.floor(time / 60);
+          const minutes = time % 60;
+          const ampm = hours >= 12 ? 'PM' : 'AM';
+          const displayHours = hours > 12 ? hours - 12 : hours === 0 ? 12 : hours;
+          const displayMinutes = minutes.toString().padStart(2, '0');
+          
+          const timeString = `${displayHours}:${displayMinutes} ${ampm}`;
+          timeSlots.push(timeString);
+        }
+        return timeSlots;
+      } else {
+        // Outside opening hours
+        return ['ASAP'];
+      }
+    } else if (currentDay === 2) { // Tuesday - closed
+      return ['ASAP'];
+    } else {
+      // Friday, Saturday, Sunday - 16:00-00:00
+      const timeSlots = ['ASAP'];
+      const interval = mode === 'collection' 
+        ? storeConfig.collection_lead_time_minutes 
+        : storeConfig.delivery_lead_time_minutes;
+      
+      const bufferMinutes = mode === 'collection'
+        ? storeConfig.collection_buffer_before_close_minutes
+        : storeConfig.delivery_buffer_before_close_minutes;
+      
+      // Determine start time
+      let startTime;
+      if (currentTime < todayOpenTime) {
+        // Before opening - start from opening time
+        startTime = todayOpenTime;
+      } else {
+        // After opening - start from current time + interval
+        startTime = Math.ceil(currentTime / interval) * interval;
+      }
+      
+      // Generate time slots until closing time minus buffer
+      const latestTime = todayCloseTime - bufferMinutes;
+      
+      for (let time = startTime; time < latestTime; time += interval) {
+        const hours = Math.floor(time / 60);
+        const minutes = time % 60;
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        const displayHours = hours > 12 ? hours - 12 : hours === 0 ? 12 : hours;
+        const displayMinutes = minutes.toString().padStart(2, '0');
+        
+        const timeString = `${displayHours}:${displayMinutes} ${ampm}`;
+        timeSlots.push(timeString);
+      }
+      
+      return timeSlots;
     }
-    
-    return timeSlots;
   };
 
   // Add CSS styles for the menu layout
@@ -350,9 +417,25 @@ export default function MenuPage() {
         const res = await fetch(process.env.NEXT_PUBLIC_API_URL + '/api/menu');
         if (res.ok) {
           const d = await res.json();
-          setData(d);
-          if (d.categories.length > 0) {
-            setActiveCategory(d.categories[0].id);
+          // Transform the data to match frontend expectations
+          const transformedData = {
+            categories: d.categories.map(cat => ({
+              id: cat.id,
+              name: cat.name
+            })),
+            items: d.items.map(item => ({
+              id: item.id,
+              name: item.name,
+              description: item.description,
+              price: item.price_pence, // Transform price_pence to price
+              categoryId: item.category_id, // Transform category_id to categoryId
+              imageUrl: item.image_url,
+              options: item.options || [] // Transform nested options structure
+            }))
+          };
+          setData(transformedData);
+          if (transformedData.categories.length > 0) {
+            setActiveCategory(transformedData.categories[0].id);
           }
         }
       } catch (e) {
