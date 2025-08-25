@@ -146,9 +146,11 @@ export default function MenuPage() {
   const generateTimeSlots = (mode) => {
     if (!storeConfig) return ['ASAP'];
     
+    // Use UK timezone for store operations
     const now = new Date();
-    const currentTime = now.getHours() * 60 + now.getMinutes(); // Current time in minutes
-    const currentDay = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    const ukTime = new Date(now.toLocaleString("en-US", {timeZone: "Europe/London"}));
+    const currentTime = ukTime.getHours() * 60 + ukTime.getMinutes(); // Current time in minutes (UK time)
+    const currentDay = ukTime.getDay(); // 0 = Sunday, 1 = Monday, etc. (UK time)
     
     // Get preparation time based on mode
     const prepTime = mode === 'collection' 
@@ -804,8 +806,8 @@ export default function MenuPage() {
               <h4>Your Order</h4>
               {/* Opening Hours Display */}
               {openingHours && (
-                <div className="opening-hours-display text-center mb-3 p-2 bg-gray-100 rounded text-sm">
-                  <div className="font-medium text-gray-700">Today's Hours:</div>
+                <div className="opening-hours-display text-center mb-3 p-2 bg-gray-100 rounded text-xs">
+                  <div className="font-medium text-gray-700">Opening Hours:</div>
                   <div className="text-gray-600">
                     {openingHours.is_closed ? 'Closed' : 
                      (openingHours.hours && Array.isArray(openingHours.hours) ? 
