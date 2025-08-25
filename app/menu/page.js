@@ -22,10 +22,26 @@ export default function MenuPage() {
     async function loadStoreConfig() {
       try {
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://site1-backend-production.up.railway.app';
+        console.log('Loading store config from:', apiUrl + '/api/store/config');
+        
         const res = await fetch(apiUrl + '/api/store/config');
+        console.log('Store config API response status:', res.status);
+        
         if (res.ok) {
           const config = await res.json();
+          console.log('Store config loaded:', config);
           setStoreConfig(config);
+        } else {
+          console.error('Store config API error:', res.status, res.statusText);
+          const errorText = await res.text();
+          console.error('Error response:', errorText);
+          // Fallback to default config
+          setStoreConfig({
+            collection_lead_time_minutes: 15,
+            delivery_lead_time_minutes: 45,
+            collection_buffer_before_close_minutes: 15,
+            delivery_buffer_before_close_minutes: 15
+          });
         }
       } catch (e) {
         console.error('Error loading store config:', e);
@@ -430,14 +446,23 @@ export default function MenuPage() {
     async function load() {
       try {
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://site1-backend-production.up.railway.app';
+        console.log('Loading menu data from:', apiUrl + '/api/menu');
+        
         const res = await fetch(apiUrl + '/api/menu');
+        console.log('Menu API response status:', res.status);
+        
         if (res.ok) {
           const d = await res.json();
+          console.log('Menu data loaded:', d);
           // Backend already returns the correct format, no need for transformation
           setData(d);
           if (d.categories.length > 0) {
             setActiveCategory(d.categories[0].id);
           }
+        } else {
+          console.error('Menu API error:', res.status, res.statusText);
+          const errorText = await res.text();
+          console.error('Error response:', errorText);
         }
       } catch (e) {
         console.error('Error loading menu data:', e);
