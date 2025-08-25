@@ -22,7 +22,6 @@ export default function MenuPage() {
     closingTime: '22:00',
     collectionTimeMinutes: 15, // 15 minutes for collection
     deliveryTimeMinutes: 45,   // 45 minutes for delivery
-    deliveryPostcodes: ['PE6 0EG', 'PE6 0EH', 'PE6 0EJ'], // Valid delivery postcodes
   };
 
   // Generate time slots based on current time and business config
@@ -110,27 +109,209 @@ export default function MenuPage() {
         border-radius: 3px;
       }
       .menu-item button:hover { background: #a2793f; cursor: pointer; }
-      .order-panel { background: #f9f8f4; padding: 15px; border: 1px solid #ddd; border-radius: 3px; }
-      .order-panel h4 { background: #b58b4d; color:#fff; padding: 10px; margin-top:0; border-radius:3px; font-size: 1.1rem; }
-      .order-panel .option-row { display: flex; align-items: center; margin-bottom: 10px; }
-      .order-panel .option-row label { margin-left: 5px; margin-right: 15px; font-weight: normal; }
-      .order-panel select { width: 100%; padding: 5px; margin-bottom: 10px; }
-      .cart-empty { font-style: italic; color: #777; margin-bottom: 10px; }
-      .cart-items { list-style: none; padding: 0; margin: 0; }
-      .cart-items li { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid #e5e5e5; }
+      .order-panel { 
+        background: #f9f8f4; 
+        padding: 15px; 
+        border: 1px solid #ddd; 
+        border-radius: 3px; 
+        height: fit-content;
+        position: sticky;
+        top: 100px;
+      }
+      .order-panel h4 { 
+        background: #b58b4d; 
+        color:#fff; 
+        padding: 10px; 
+        margin-top:0; 
+        border-radius:3px; 
+        font-size: 1.1rem; 
+        margin-bottom: 15px;
+      }
+      .order-panel .option-row { 
+        display: flex; 
+        align-items: center; 
+        margin-bottom: 10px; 
+        padding: 8px 0;
+      }
+      .order-panel .option-row label { 
+        margin-left: 5px; 
+        margin-right: 15px; 
+        font-weight: normal; 
+        font-size: 14px;
+      }
+      .order-panel select { 
+        width: 100%; 
+        padding: 8px; 
+        margin-bottom: 15px; 
+        border: 1px solid #ccc;
+        border-radius: 3px;
+      }
+      .cart-empty { 
+        font-style: italic; 
+        color: #777; 
+        margin-bottom: 10px; 
+        text-align: center;
+        padding: 20px;
+      }
+      .cart-items { 
+        list-style: none; 
+        padding: 0; 
+        margin: 0; 
+        max-height: 300px;
+        overflow-y: auto;
+      }
+      .cart-items li { 
+        display: flex; 
+        justify-content: space-between; 
+        align-items: flex-start; 
+        padding: 8px 0; 
+        border-bottom: 1px solid #e5e5e5; 
+        font-size: 13px;
+      }
       .cart-items li:last-child { border-bottom: none; }
-      .cart-summary { margin-top: 10px; font-weight: bold; }
-      .order-panel .checkout-btn { width: 100%; background: #b58b4d; color: #fff; padding: 8px; border: none; border-radius: 3px; }
-      .order-panel .checkout-btn:hover { background: #a2793f; cursor:pointer; }
+      .cart-item-details {
+        flex: 1;
+        margin-right: 10px;
+      }
+      .cart-item-name {
+        font-weight: bold;
+        margin-bottom: 2px;
+      }
+      .cart-item-options {
+        font-size: 11px;
+        color: #666;
+        margin-bottom: 5px;
+      }
+      .cart-item-controls {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        margin-top: 5px;
+      }
+      .cart-item-qty {
+        display: flex;
+        align-items: center;
+        gap: 3px;
+      }
+      .cart-item-qty button {
+        width: 20px;
+        height: 20px;
+        border: 1px solid #ccc;
+        background: #fff;
+        border-radius: 2px;
+        font-size: 12px;
+        cursor: pointer;
+      }
+      .cart-item-qty button:hover {
+        background: #f0f0f0;
+      }
+      .cart-item-qty span {
+        font-weight: bold;
+        min-width: 20px;
+        text-align: center;
+      }
+      .cart-item-price {
+        text-align: right;
+        min-width: 60px;
+      }
+      .cart-item-total {
+        font-weight: bold;
+        color: #b58b4d;
+      }
+      .cart-item-remove {
+        color: #dc3545;
+        font-size: 11px;
+        cursor: pointer;
+        margin-top: 2px;
+      }
+      .cart-item-remove:hover {
+        text-decoration: underline;
+      }
+      .cart-summary { 
+        margin-top: 15px; 
+        font-weight: bold; 
+        border-top: 2px solid #ddd;
+        padding-top: 10px;
+      }
+      .cart-summary-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 5px;
+        font-size: 14px;
+      }
+      .cart-summary-total {
+        font-size: 16px;
+        font-weight: bold;
+        color: #b58b4d;
+        border-top: 1px solid #ddd;
+        padding-top: 5px;
+        margin-top: 5px;
+      }
+      .order-panel .checkout-btn { 
+        width: 100%; 
+        background: #b58b4d; 
+        color: #fff; 
+        padding: 12px; 
+        border: none; 
+        border-radius: 3px; 
+        font-size: 16px;
+        font-weight: bold;
+        margin-top: 15px;
+      }
+      .order-panel .checkout-btn:hover { 
+        background: #a2793f; 
+        cursor:pointer; 
+      }
+      .delivery-section {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 3px;
+        padding: 10px;
+        margin-bottom: 15px;
+      }
+      .delivery-section input {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+        margin-bottom: 8px;
+        box-sizing: border-box;
+      }
+      .delivery-section button {
+        width: 100%;
+        background: #b58b4d;
+        color: #fff;
+        border: none;
+        padding: 8px;
+        border-radius: 3px;
+        cursor: pointer;
+        font-size: 14px;
+      }
+      .delivery-section button:hover {
+        background: #a2793f;
+      }
+      .delivery-status { 
+        font-size: 12px; 
+        margin-top: 5px; 
+        padding: 5px;
+        border-radius: 3px;
+      }
+      .delivery-status.success { 
+        color: #155724; 
+        background: #d4edda;
+        border: 1px solid #c3e6cb;
+      }
+      .delivery-status.error { 
+        color: #721c24; 
+        background: #f8d7da;
+        border: 1px solid #f5c6cb;
+      }
       .row { display: flex; flex-wrap: wrap; }
       .col-md-3 { flex: 0 0 25%; max-width: 25%; padding: 0 15px; }
       .col-md-6 { flex: 0 0 50%; max-width: 50%; padding: 0 15px; }
-      .business-hours { font-size: 0.8rem; color: #666; margin-top: 5px; }
-      .delivery-status { font-size: 0.9rem; margin-top: 5px; }
-      .delivery-status.success { color: #28a745; }
-      .delivery-status.error { color: #dc3545; }
       @media (max-width: 768px) {
         .col-md-3, .col-md-6 { flex: 0 0 100%; max-width: 100%; }
+        .order-panel { position: static; }
       }
     `;
     document.head.appendChild(style);
@@ -272,19 +453,6 @@ export default function MenuPage() {
   async function checkDelivery() {
     if (!postcode) {
       alert('Please enter postcode');
-      return;
-    }
-
-    // Check if postcode is valid for delivery
-    const isValidPostcode = businessConfig.deliveryPostcodes.some(validPostcode => 
-      postcode.toUpperCase().replace(/\s/g, '') === validPostcode.replace(/\s/g, '')
-    );
-
-    if (!isValidPostcode) {
-      setDeliveryInfo({
-        isDeliverable: false,
-        reason: 'Sorry, we do not deliver to your postcode. You can place an order and collect from store.'
-      });
       return;
     }
 
@@ -455,10 +623,10 @@ export default function MenuPage() {
           {/* Right Sidebar - Order Panel */}
           <div className="col-md-3">
             <aside className="order-panel">
-              <h4 className="bg-red-600 text-white p-3 rounded text-xl font-bold mb-4">Your Order</h4>
+              <h4>Your Order</h4>
               
               {/* Delivery/Collection Mode */}
-              <div className="option-row mb-4">
+              <div className="option-row">
                 <input 
                   type="radio" 
                   id="del" 
@@ -466,10 +634,9 @@ export default function MenuPage() {
                   checked={mode === 'delivery'}
                   onChange={() => setMode('delivery')}
                 />
-                <label htmlFor="del" className="ml-2">Home Delivery</label>
-                <div className="business-hours">Starts at: 05:15 pm</div>
+                <label htmlFor="del">Home Delivery</label>
               </div>
-              <div className="option-row mb-4">
+              <div className="option-row">
                 <input 
                   type="radio" 
                   id="col" 
@@ -477,22 +644,15 @@ export default function MenuPage() {
                   checked={mode === 'collection'}
                   onChange={() => setMode('collection')}
                 />
-                <label htmlFor="col" className="ml-2">Collection</label>
-                <div className="business-hours">Starts at: 04:45 pm</div>
-              </div>
-
-              {/* Business Hours Display */}
-              <div className="business-hours mb-4">
-                Store opening {businessConfig.openingTime}-{businessConfig.closingTime}
+                <label htmlFor="col">Collection</label>
               </div>
 
               {/* Requested Time */}
-              <label htmlFor="req-time" className="block mb-2 font-semibold">Requested Time</label>
+              <label htmlFor="req-time">Requested Time</label>
               <select 
                 id="req-time" 
                 value={requestedTime}
                 onChange={(e) => setRequestedTime(e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded mb-4"
               >
                 {timeSlots.map((time, index) => (
                   <option key={index} value={time}>{time}</option>
@@ -501,22 +661,16 @@ export default function MenuPage() {
 
               {/* Delivery Postcode Check */}
               {mode === 'delivery' && (
-                <div className="mb-4 p-3 bg-gray-50 rounded">
-                  <div className="flex space-x-2 mb-3">
-                    <input
-                      type="text"
-                      value={postcode}
-                      onChange={(e) => setPostcode(e.target.value)}
-                      placeholder="Enter postcode"
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-red-500"
-                    />
-                    <button 
-                      onClick={checkDelivery}
-                      className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors font-medium"
-                    >
-                      Check
-                    </button>
-                  </div>
+                <div className="delivery-section">
+                  <input
+                    type="text"
+                    value={postcode}
+                    onChange={(e) => setPostcode(e.target.value)}
+                    placeholder="Enter postcode"
+                  />
+                  <button onClick={checkDelivery}>
+                    Check
+                  </button>
                   {deliveryInfo && (
                     <div className={`delivery-status ${deliveryInfo.isDeliverable ? 'success' : 'error'}`}>
                       {deliveryInfo.isDeliverable
@@ -529,49 +683,39 @@ export default function MenuPage() {
 
               {/* Cart Items */}
               {cartItems.length === 0 ? (
-                <div className="cart-empty text-center py-8">
+                <div className="cart-empty">
                   <div className="text-4xl mb-2">🛒</div>
-                  <p className="text-gray-500">Your shopping cart is empty!</p>
+                  <p>Your shopping cart is empty!</p>
                 </div>
               ) : (
                 <ul className="cart-items">
                   {cartItems.map((item, idx) => (
-                    <li key={idx} className="flex justify-between items-center py-2 border-b border-gray-200">
-                      <div className="flex-1">
-                        <div className="font-semibold">{item.name}</div>
+                    <li key={idx}>
+                      <div className="cart-item-details">
+                        <div className="cart-item-name">{item.name}</div>
                         {item.options && item.options.length > 0 && (
-                          <div className="text-sm text-gray-600">
+                          <div className="cart-item-options">
                             {item.options.map((option, optIdx) => (
-                              <div key={optIdx} className="text-xs">{option}</div>
+                              <div key={optIdx}>{option}</div>
                             ))}
                           </div>
                         )}
-                        <div className="flex items-center space-x-2 mt-1">
-                          <button 
-                            onClick={() => updateQuantity(idx, item.qty - 1)}
-                            className="w-6 h-6 rounded bg-gray-200 flex items-center justify-center hover:bg-gray-300 transition-colors font-bold"
-                          >
-                            -
-                          </button>
-                          <span className="font-bold">{item.qty}</span>
-                          <button 
-                            onClick={() => updateQuantity(idx, item.qty + 1)}
-                            className="w-6 h-6 rounded bg-gray-200 flex items-center justify-center hover:bg-gray-300 transition-colors font-bold"
-                          >
-                            +
-                          </button>
+                        <div className="cart-item-controls">
+                          <div className="cart-item-qty">
+                            <button onClick={() => updateQuantity(idx, item.qty - 1)}>-</button>
+                            <span>{item.qty}</span>
+                            <button onClick={() => updateQuantity(idx, item.qty + 1)}>+</button>
+                          </div>
+                          <div className="cart-item-remove" onClick={() => removeItem(idx)}>
+                            Remove
+                          </div>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className="font-bold text-red-600">
+                      <div className="cart-item-price">
+                        <div className="cart-item-total">
                           £{((item.price * item.qty) / 100).toFixed(2)}
                         </div>
-                        <button 
-                          onClick={() => removeItem(idx)}
-                          className="text-red-500 hover:text-red-700 text-sm"
-                        >
-                          Remove
-                        </button>
+                        <div>£{(item.price / 100).toFixed(2)} each</div>
                       </div>
                     </li>
                   ))}
@@ -580,18 +724,18 @@ export default function MenuPage() {
 
               {/* Order Summary */}
               {cartItems.length > 0 && (
-                <div className="cart-summary mt-4 pt-4 border-t border-gray-200">
-                  <div className="flex justify-between mb-2">
+                <div className="cart-summary">
+                  <div className="cart-summary-row">
                     <span>Sub‑Total:</span>
                     <span>£{(subtotal / 100).toFixed(2)}</span>
                   </div>
                   {mode === 'delivery' && deliveryInfo?.isDeliverable && (
-                    <div className="flex justify-between mb-2">
+                    <div className="cart-summary-row">
                       <span>Delivery:</span>
                       <span>£{deliveryFee.toFixed(2)}</span>
                     </div>
                   )}
-                  <div className="flex justify-between font-bold text-lg border-t border-gray-200 pt-2">
+                  <div className="cart-summary-total">
                     <span>Total:</span>
                     <span>£{total.toFixed(2)}</span>
                   </div>
@@ -600,7 +744,7 @@ export default function MenuPage() {
 
               {/* Checkout Button */}
               <button 
-                className="checkout-btn w-full mt-4 bg-red-600 hover:bg-red-700 text-white p-3 rounded font-semibold transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+                className="checkout-btn"
                 disabled={cartItems.length === 0 || (mode === 'delivery' && (!deliveryInfo || !deliveryInfo.isDeliverable))}
                 onClick={() => (window.location.href = '/checkout')}
               >

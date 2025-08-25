@@ -32,7 +32,6 @@ export default function CheckoutPage() {
     closingTime: '22:00',
     collectionTimeMinutes: 15,
     deliveryTimeMinutes: 45,
-    deliveryPostcodes: ['PE6 0EG', 'PE6 0EH', 'PE6 0EJ'],
   };
 
   // On mount, read cart from sessionStorage (passed from menu page)
@@ -80,19 +79,6 @@ export default function CheckoutPage() {
   async function fetchQuote() {
     if (!contact.postcode) {
       alert('Please enter postcode');
-      return;
-    }
-
-    // Check if postcode is valid for delivery
-    const isValidPostcode = businessConfig.deliveryPostcodes.some(validPostcode => 
-      contact.postcode.toUpperCase().replace(/\s/g, '') === validPostcode.replace(/\s/g, '')
-    );
-
-    if (!isValidPostcode) {
-      setQuote({
-        isDeliverable: false,
-        reason: 'Sorry we do not deliver to your post code. You can place an order and Collect from Store.'
-      });
       return;
     }
 
