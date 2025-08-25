@@ -40,6 +40,20 @@ export default function MenuPage() {
     loadStoreConfig();
   }, []);
 
+  // Load cart from sessionStorage on component mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedCart = sessionStorage.getItem('cart');
+      if (savedCart) {
+        try {
+          setCartItems(JSON.parse(savedCart));
+        } catch (e) {
+          console.error('Error loading cart from sessionStorage:', e);
+        }
+      }
+    }
+  }, []);
+
   // Generate time slots based on current time and store config
   const generateTimeSlots = (mode) => {
     if (!storeConfig) return ['ASAP'];
@@ -417,29 +431,14 @@ export default function MenuPage() {
         const res = await fetch(process.env.NEXT_PUBLIC_API_URL + '/api/menu');
         if (res.ok) {
           const d = await res.json();
-          // Transform the data to match frontend expectations
-          const transformedData = {
-            categories: d.categories.map(cat => ({
-              id: cat.id,
-              name: cat.name
-            })),
-            items: d.items.map(item => ({
-              id: item.id,
-              name: item.name,
-              description: item.description,
-              price: item.price_pence, // Transform price_pence to price
-              categoryId: item.category_id, // Transform category_id to categoryId
-              imageUrl: item.image_url,
-              options: item.options || [] // Transform nested options structure
-            }))
-          };
-          setData(transformedData);
-          if (transformedData.categories.length > 0) {
-            setActiveCategory(transformedData.categories[0].id);
+          // Backend already returns the correct format, no need for transformation
+          setData(d);
+          if (d.categories.length > 0) {
+            setActiveCategory(d.categories[0].id);
           }
         }
       } catch (e) {
-        console.error(e);
+        console.error('Error loading menu data:', e);
       } finally {
         setIsLoading(false);
       }
