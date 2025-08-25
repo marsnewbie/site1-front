@@ -539,10 +539,25 @@ export default function MenuPage() {
 
   function handleOptionChange(optionId, choiceId, type) {
     if (type === 'radio') {
-      setSelectedOptions(prev => ({
-        ...prev,
-        [optionId]: choiceId
-      }));
+      setSelectedOptions(prev => {
+        const newOptions = {
+          ...prev,
+          [optionId]: choiceId
+        };
+        
+        // Clear dependent options when parent selection changes
+        if (selectedItem?.conditionalOptions && selectedItem.conditionalOptions[optionId]) {
+          // Find all dependent options that are no longer valid
+          selectedItem.options.forEach(option => {
+            if (option.dependsOnOption === optionId && option.dependsOnChoice !== choiceId) {
+              // Clear this dependent option's selections
+              delete newOptions[option.id];
+            }
+          });
+        }
+        
+        return newOptions;
+      });
     } else if (type === 'checkbox') {
       setSelectedOptions(prev => ({
         ...prev,
@@ -555,23 +570,46 @@ export default function MenuPage() {
     }
   }
 
+  // Check if an option should be displayed based on conditional logic
+  function shouldShowOption(option, selectedItem, selectedOptions) {
+    if (!option.isConditional) return true;
+    
+    // Check if the parent choice is selected
+    const parentOption = option.dependsOnOption;
+    const parentChoice = option.dependsOnChoice;
+    
+    if (!parentOption || !parentChoice) return true;
+    
+    // For radio type parent, check if the specific choice is selected
+    const selectedParentChoice = selectedOptions[parentOption];
+    return selectedParentChoice === parentChoice;
+  }
+
   function addItemWithOptions() {
     if (!selectedItem) return;
 
-    // Validate required options
-    const requiredOptions = selectedItem.options.filter(opt => opt.required);
-    const missingRequired = requiredOptions.some(opt => !selectedOptions[opt.id]);
+    // Validate required options (only check visible options)
+    const visibleOptions = selectedItem.options.filter(opt => shouldShowOption(opt, selectedItem, selectedOptions));
+    const requiredOptions = visibleOptions.filter(opt => opt.required);
+    const missingRequired = requiredOptions.some(opt => {
+      if (opt.type === 'radio') {
+        return !selectedOptions[opt.id];
+      } else if (opt.type === 'checkbox') {
+        return !selectedOptions[opt.id] || selectedOptions[opt.id].length === 0;
+      }
+      return false;
+    });
     
     if (missingRequired) {
       alert('Please select all required options');
       return;
     }
 
-    // Calculate total price including options
+    // Calculate total price including options (only visible options)
     let totalPrice = selectedItem.price;
     let optionDetails = [];
 
-    selectedItem.options.forEach(option => {
+    visibleOptions.forEach(option => {
       if (selectedOptions[option.id]) {
         if (option.type === 'radio') {
           const choice = option.choices.find(c => c.id === selectedOptions[option.id]);
@@ -979,7 +1017,9 @@ export default function MenuPage() {
               <p className="text-gray-600 mb-8 text-lg">{selectedItem.description}</p>
               
               <div className="space-y-8">
-                {selectedItem.options.map((option) => (
+                {selectedItem.options
+                  .filter((option) => shouldShowOption(option, selectedItem, selectedOptions))
+                  .map((option) => (
                   <div key={option.id} className="border-b border-gray-200 pb-8">
                     <h4 className="font-bold text-lg mb-4 flex items-center">
                       {option.name}
@@ -1018,19 +1058,21 @@ export default function MenuPage() {
               <div className="mt-8 flex justify-between items-center pt-6 border-t border-gray-200">
                 <span className="text-2xl font-bold">
                   Total: £{((selectedItem.price + 
-                    selectedItem.options.reduce((total, opt) => {
-                      if (selectedOptions[opt.id]) {
-                        if (opt.type === 'radio') {
-                          const choice = opt.choices.find(c => c.id === selectedOptions[opt.id]);
-                          return total + (choice?.priceDelta || 0);
-                        } else {
-                          return total + opt.choices
-                            .filter(c => selectedOptions[opt.id]?.includes(c.id))
-                            .reduce((sum, c) => sum + c.priceDelta, 0);
+                    selectedItem.options
+                      .filter(opt => shouldShowOption(opt, selectedItem, selectedOptions))
+                      .reduce((total, opt) => {
+                        if (selectedOptions[opt.id]) {
+                          if (opt.type === 'radio') {
+                            const choice = opt.choices.find(c => c.id === selectedOptions[opt.id]);
+                            return total + (choice?.priceDelta || 0);
+                          } else {
+                            return total + opt.choices
+                              .filter(c => selectedOptions[opt.id]?.includes(c.id))
+                              .reduce((sum, c) => sum + c.priceDelta, 0);
+                          }
                         }
-                      }
-                      return total;
-                    }, 0)) / 100).toFixed(2)}
+                        return total;
+                      }, 0)) / 100).toFixed(2)}
                 </span>
                 <button
                   onClick={addItemWithOptions}
