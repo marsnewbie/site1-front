@@ -808,7 +808,9 @@ export default function MenuPage() {
                   <div className="font-medium text-gray-700">Today's Hours:</div>
                   <div className="text-gray-600">
                     {openingHours.is_closed ? 'Closed' : 
-                     openingHours.hours.map(h => h.formatted).join(', ')}
+                     (openingHours.hours && Array.isArray(openingHours.hours) ? 
+                      openingHours.hours.map(h => h.formatted).join(', ') : 
+                      'Hours unavailable')}
                   </div>
                 </div>
               )}
