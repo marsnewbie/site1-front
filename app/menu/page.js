@@ -21,7 +21,8 @@ export default function MenuPage() {
   useEffect(() => {
     async function loadStoreConfig() {
       try {
-        const res = await fetch(process.env.NEXT_PUBLIC_API_URL + '/api/store/config');
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://site1-backend-production.up.railway.app';
+        const res = await fetch(apiUrl + '/api/store/config');
         if (res.ok) {
           const config = await res.json();
           setStoreConfig(config);
@@ -428,7 +429,8 @@ export default function MenuPage() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch(process.env.NEXT_PUBLIC_API_URL + '/api/menu');
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://site1-backend-production.up.railway.app';
+        const res = await fetch(apiUrl + '/api/menu');
         if (res.ok) {
           const d = await res.json();
           // Backend already returns the correct format, no need for transformation
@@ -568,7 +570,8 @@ export default function MenuPage() {
 
     try {
       const subtotal = cartItems.reduce((sum, it) => sum + it.price * it.qty, 0);
-      const res = await fetch(process.env.NEXT_PUBLIC_API_URL + '/api/delivery/quote', {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://site1-backend-production.up.railway.app';
+      const res = await fetch(apiUrl + '/api/delivery/quote', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ mode: 'delivery', postcode, subtotalPence: subtotal }),

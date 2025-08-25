@@ -31,7 +31,8 @@ export default function CheckoutPage() {
   useEffect(() => {
     async function loadStoreConfig() {
       try {
-        const res = await fetch(process.env.NEXT_PUBLIC_API_URL + '/api/store/config');
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://site1-backend-production.up.railway.app';
+        const res = await fetch(apiUrl + '/api/store/config');
         if (res.ok) {
           const config = await res.json();
           setStoreConfig(config);
@@ -99,10 +100,15 @@ export default function CheckoutPage() {
     }
 
     try {
-      const res = await fetch(process.env.NEXT_PUBLIC_API_URL + '/api/delivery/quote', {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://site1-backend-production.up.railway.app';
+      const res = await fetch(apiUrl + '/api/delivery/quote', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mode: 'delivery', postcode: contact.postcode, subtotalPence: subtotal }),
+        body: JSON.stringify({ 
+          mode: 'delivery', 
+          postcode: contact.postcode, 
+          subtotalPence: subtotal 
+        }),
       });
       const data = await res.json();
       setQuote(data);
@@ -129,7 +135,8 @@ export default function CheckoutPage() {
     setSubmitting(true);
     setMessage('');
     try {
-      const res = await fetch(process.env.NEXT_PUBLIC_API_URL + '/api/checkout', {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://site1-backend-production.up.railway.app';
+      const res = await fetch(apiUrl + '/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
