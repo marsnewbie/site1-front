@@ -14,6 +14,76 @@ export default function MenuPage() {
   const [deliveryInfo, setDeliveryInfo] = useState(null);
   const [mode, setMode] = useState('collection');
   const [isLoading, setIsLoading] = useState(true);
+  const [requestedTime, setRequestedTime] = useState('ASAP');
+
+  // Add CSS styles for the menu layout
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      .menu-categories ul { padding-left: 0; margin: 0; }
+      .menu-categories li { margin-bottom: 5px; }
+      .menu-categories a {
+        display: block;
+        background: #b58b4d;
+        color: #fff;
+        padding: 8px 12px;
+        border-radius: 3px;
+        text-decoration: none;
+        font-weight: bold;
+      }
+      .menu-categories a:hover,
+      .menu-categories a:focus {
+        background: #a2793f;
+        color: #fff;
+      }
+      .menu-items section { margin-bottom: 30px; }
+      .menu-items h3 {
+        background: #b58b4d;
+        color: #fff;
+        padding: 10px;
+        border-radius: 3px;
+        font-size: 1.25rem;
+      }
+      .menu-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 5px;
+        border-bottom: 1px solid #e5e5e5;
+      }
+      .menu-item:last-child { border-bottom: none; }
+      .menu-item .name { flex: 1; }
+      .menu-item .price { margin-right: 10px; white-space: nowrap; }
+      .menu-item button {
+        background: #b58b4d;
+        color: #fff;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 3px;
+      }
+      .menu-item button:hover { background: #a2793f; cursor: pointer; }
+      .order-panel { background: #f9f8f4; padding: 15px; border: 1px solid #ddd; border-radius: 3px; }
+      .order-panel h4 { background: #b58b4d; color:#fff; padding: 10px; margin-top:0; border-radius:3px; font-size: 1.1rem; }
+      .order-panel .option-row { display: flex; align-items: center; margin-bottom: 10px; }
+      .order-panel .option-row label { margin-left: 5px; margin-right: 15px; font-weight: normal; }
+      .order-panel select { width: 100%; padding: 5px; margin-bottom: 10px; }
+      .cart-empty { font-style: italic; color: #777; margin-bottom: 10px; }
+      .cart-items { list-style: none; padding: 0; margin: 0; }
+      .cart-items li { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid #e5e5e5; }
+      .cart-items li:last-child { border-bottom: none; }
+      .cart-summary { margin-top: 10px; font-weight: bold; }
+      .order-panel .checkout-btn { width: 100%; background: #b58b4d; color: #fff; padding: 8px; border: none; border-radius: 3px; }
+      .order-panel .checkout-btn:hover { background: #a2793f; cursor:pointer; }
+      .row { display: flex; flex-wrap: wrap; }
+      .col-md-3 { flex: 0 0 25%; max-width: 25%; padding: 0 15px; }
+      .col-md-6 { flex: 0 0 50%; max-width: 50%; padding: 0 15px; }
+      @media (max-width: 768px) {
+        .col-md-3, .col-md-6 { flex: 0 0 100%; max-width: 100%; }
+      }
+    `;
+    document.head.appendChild(style);
+    return () => document.head.removeChild(style);
+  }, []);
 
   useEffect(() => {
     async function load() {
@@ -188,7 +258,7 @@ export default function MenuPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading menu...</p>
         </div>
       </div>
@@ -201,266 +271,255 @@ export default function MenuPage() {
       <header className="bg-white shadow-sm border-b sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <Link href="/" className="text-2xl font-bold text-gray-900">
-                China Palace
-              </Link>
+            {/* Social Icons */}
+            <div className="hidden md:flex items-center space-x-4">
+              <a href="#" className="text-gray-600 hover:text-gray-900">
+                <i className="fa fa-instagram text-xl"></i>
+              </a>
+              <a href="#" className="text-gray-600 hover:text-gray-900">
+                <i className="fa fa-facebook text-xl"></i>
+              </a>
             </div>
+            
+            {/* Navigation Left */}
             <nav className="hidden md:flex space-x-8">
-              <Link href="/" className="text-gray-700 hover:text-gray-900">Home</Link>
-              <Link href="/menu" className="text-gray-900 font-medium">Menu</Link>
-              <Link href="/checkout" className="text-gray-700 hover:text-gray-900">Checkout</Link>
+              <Link href="/" className="text-gray-900 font-medium">Home</Link>
+              <Link href="/menu" className="text-gray-700 hover:text-gray-900">Menu</Link>
             </nav>
+            
+            {/* Logo */}
+            <div className="flex items-center">
+              <Image 
+                src="https://erzoxdbzmmhshpkscfln.supabase.co/storage/v1/object/public/media/logo/logo01.png"
+                alt="China Palace"
+                width={120}
+                height={40}
+                className="h-10 w-auto"
+              />
+            </div>
+            
+            {/* Navigation Right */}
+            <nav className="hidden md:flex space-x-8">
+              <Link href="/feedback" className="text-gray-700 hover:text-gray-900">Feedback</Link>
+              <Link href="/contact" className="text-gray-700 hover:text-gray-900">Contact Us</Link>
+            </nav>
+            
+            {/* Login/Register */}
+            <div className="hidden md:flex items-center space-x-2">
+              <i className="fa fa-user-circle-o text-gray-600"></i>
+              <Link href="/login" className="text-gray-700 hover:text-gray-900">login</Link>
+              <span className="text-gray-600">or</span>
+              <Link href="/register" className="text-gray-700 hover:text-gray-900">Register</Link>
+            </div>
           </div>
         </div>
       </header>
 
       {/* Main Layout - Three Columns */}
-      <div className="flex max-w-7xl mx-auto">
-        {/* Left Sidebar - Categories */}
-        <div className="w-80 bg-white shadow-sm min-h-screen sticky top-16">
-          <div className="p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-6">Menu Categories</h2>
-            <div className="space-y-2">
-              {data.categories.map((cat) => (
-                <button
-                  key={cat.id}
-                  onClick={() => setActiveCategory(cat.id)}
-                  className={`w-full text-left p-4 rounded-xl transition-all duration-200 ${
-                    activeCategory === cat.id
-                      ? 'bg-green-600 text-white shadow-lg'
-                      : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
-                  }`}
-                >
-                  <div className="font-semibold text-lg">{cat.name}</div>
-                  <div className="text-sm opacity-75 mt-1">
-                    {data.items.filter(item => item.categoryId === cat.id).length} items
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Center - Menu Items */}
-        <div className="flex-1 p-8">
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold text-gray-900 mb-3">Our Menu</h1>
-            <p className="text-xl text-gray-600">Choose from our delicious selection of authentic Chinese cuisine</p>
+      <div className="container mx-auto py-8">
+        <div className="row flex">
+          {/* Left Sidebar - Categories */}
+          <div className="col-md-3">
+            <nav className="menu-categories">
+              <ul className="list-unstyled">
+                {data.categories.map((cat) => (
+                  <li key={cat.id}>
+                    <a 
+                      href={`#cat-${cat.id}`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setActiveCategory(cat.id);
+                      }}
+                      className={`block bg-red-600 text-white p-3 rounded mb-2 text-decoration-none font-weight-bold transition-colors ${
+                        activeCategory === cat.id ? 'bg-red-700' : 'hover:bg-red-700'
+                      }`}
+                    >
+                      {cat.name}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </nav>
           </div>
 
-          {activeCategory && (
-            <div className="space-y-8">
-              {data.items
-                .filter((i) => i.categoryId === activeCategory)
-                .map((item) => (
-                  <div key={item.id} className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300">
-                    <div className="flex">
-                      {/* Item Image */}
-                      <div className="w-48 h-48 flex-shrink-0">
-                        {item.imageUrl ? (
-                          <Image
-                            src={item.imageUrl}
-                            alt={item.name}
-                            width={192}
-                            height={192}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center">
-                            <span className="text-5xl">🍜</span>
-                          </div>
-                        )}
-                      </div>
-                      
-                      {/* Item Details */}
-                      <div className="flex-1 p-8">
-                        <div className="flex justify-between items-start mb-4">
-                          <h3 className="text-2xl font-bold text-gray-900">{item.name}</h3>
-                          <span className="text-3xl font-bold text-green-600">
-                            £{(item.price / 100).toFixed(2)}
-                          </span>
-                        </div>
-                        
-                        <p className="text-gray-600 text-lg mb-6">{item.description}</p>
-                        
-                        {item.options && item.options.length > 0 && (
-                          <div className="mb-6">
-                            <div className="text-sm text-gray-500 mb-3 font-medium">Customization available</div>
-                            <div className="flex flex-wrap gap-2">
-                              {item.options.slice(0, 3).map((option, idx) => (
-                                <span key={idx} className="px-3 py-1 bg-green-100 text-green-700 text-sm rounded-full font-medium">
-                                  {option.name}
-                                </span>
-                              ))}
-                              {item.options.length > 3 && (
-                                <span className="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-full font-medium">
-                                  +{item.options.length - 3} more
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                        
+          {/* Center - Menu Items */}
+          <div className="col-md-6">
+            <div className="menu-items">
+              {activeCategory && (
+                <section id={`cat-${activeCategory}`}>
+                  <h3 className="bg-red-600 text-white p-3 rounded text-xl font-bold mb-4">
+                    {data.categories.find(c => c.id === activeCategory)?.name}
+                  </h3>
+                  {data.items
+                    .filter((i) => i.categoryId === activeCategory)
+                    .map((item) => (
+                      <div key={item.id} className="menu-item">
+                        <span className="name text-lg font-semibold">{item.name}</span>
+                        <span className="price text-xl font-bold text-red-600">
+                          £{(item.price / 100).toFixed(2)}
+                        </span>
                         <button 
                           onClick={() => openOptionsModal(item)}
-                          className="bg-green-600 text-white px-8 py-4 rounded-xl hover:bg-green-700 transition-colors font-semibold text-lg shadow-lg hover:shadow-xl"
+                          className="bg-red-600 hover:bg-red-700 text-white border-none px-4 py-2 rounded font-semibold transition-colors"
                         >
-                          Add to Cart
+                          +
                         </button>
                       </div>
+                    ))}
+                </section>
+              )}
+            </div>
+          </div>
+
+          {/* Right Sidebar - Order Panel */}
+          <div className="col-md-3">
+            <aside className="order-panel">
+              <h4 className="bg-red-600 text-white p-3 rounded text-xl font-bold mb-4">Your Order</h4>
+              
+              {/* Delivery/Collection Mode */}
+              <div className="option-row mb-4">
+                <input 
+                  type="radio" 
+                  id="del" 
+                  name="order-type" 
+                  checked={mode === 'delivery'}
+                  onChange={() => setMode('delivery')}
+                />
+                <label htmlFor="del" className="ml-2">Home Delivery</label>
+              </div>
+              <div className="option-row mb-4">
+                <input 
+                  type="radio" 
+                  id="col" 
+                  name="order-type" 
+                  checked={mode === 'collection'}
+                  onChange={() => setMode('collection')}
+                />
+                <label htmlFor="col" className="ml-2">Collection</label>
+              </div>
+
+              {/* Requested Time */}
+              <label htmlFor="req-time" className="block mb-2 font-semibold">Requested Time</label>
+              <select 
+                id="req-time" 
+                value={requestedTime}
+                onChange={(e) => setRequestedTime(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded mb-4"
+              >
+                <option>ASAP</option>
+                <option>30 Minutes</option>
+                <option>1 Hour</option>
+                <option>Tomorrow</option>
+              </select>
+
+              {/* Delivery Postcode Check */}
+              {mode === 'delivery' && (
+                <div className="mb-4 p-3 bg-gray-50 rounded">
+                  <div className="flex space-x-2 mb-3">
+                    <input
+                      type="text"
+                      value={postcode}
+                      onChange={(e) => setPostcode(e.target.value)}
+                      placeholder="Enter postcode"
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-red-500"
+                    />
+                    <button 
+                      onClick={checkDelivery}
+                      className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors font-medium"
+                    >
+                      Check
+                    </button>
+                  </div>
+                  {deliveryInfo && (
+                    <div className={`text-sm ${deliveryInfo.isDeliverable ? 'text-green-600' : 'text-red-600'}`}>
+                      {deliveryInfo.isDeliverable
+                        ? `Delivery fee £${(deliveryInfo.feePence / 100).toFixed(2)}, minimum order £${(deliveryInfo.minOrderPence / 100).toFixed(2)}`
+                        : `Not deliverable: ${deliveryInfo.reason}`}
                     </div>
-                  </div>
-                ))}
-            </div>
-          )}
-        </div>
-
-        {/* Right Sidebar - Cart */}
-        <div className="w-96 bg-white shadow-sm min-h-screen sticky top-16">
-          <div className="p-6">
-            <h3 className="text-2xl font-bold text-gray-900 mb-6">Your Order</h3>
-            
-            {/* Delivery/Collection Mode */}
-            <div className="mb-6">
-              <div className="flex space-x-4">
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    name="mode"
-                    value="collection"
-                    checked={mode === 'collection'}
-                    onChange={() => setMode('collection')}
-                    className="mr-2"
-                  />
-                  <span className="font-medium">Collection</span>
-                </label>
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    name="mode"
-                    value="delivery"
-                    checked={mode === 'delivery'}
-                    onChange={() => setMode('delivery')}
-                    className="mr-2"
-                  />
-                  <span className="font-medium">Delivery</span>
-                </label>
-              </div>
-            </div>
-
-            {/* Delivery Postcode Check */}
-            {mode === 'delivery' && (
-              <div className="mb-6 p-4 bg-gray-50 rounded-xl">
-                <div className="flex space-x-2 mb-3">
-                  <input
-                    type="text"
-                    value={postcode}
-                    onChange={(e) => setPostcode(e.target.value)}
-                    placeholder="Enter postcode"
-                    className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                  />
-                  <button 
-                    onClick={checkDelivery}
-                    className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
-                  >
-                    Check
-                  </button>
+                  )}
                 </div>
-                {deliveryInfo && (
-                  <div className={`text-sm ${deliveryInfo.isDeliverable ? 'text-green-600' : 'text-red-600'}`}>
-                    {deliveryInfo.isDeliverable
-                      ? `Delivery fee £${(deliveryInfo.feePence / 100).toFixed(2)}, minimum order £${(deliveryInfo.minOrderPence / 100).toFixed(2)}`
-                      : `Not deliverable: ${deliveryInfo.reason}`}
-                  </div>
-                )}
-              </div>
-            )}
+              )}
 
-            {/* Cart Items */}
-            <div className="space-y-4 mb-6">
+              {/* Cart Items */}
               {cartItems.length === 0 ? (
-                <div className="text-center py-12">
-                  <div className="text-6xl mb-4">🛒</div>
-                  <p className="text-gray-500 text-lg mb-2">Your cart is empty</p>
-                  <p className="text-sm text-gray-400">Add some delicious items to get started</p>
+                <div className="cart-empty text-center py-8">
+                  <div className="text-4xl mb-2">🛒</div>
+                  <p className="text-gray-500">Your shopping cart is empty!</p>
                 </div>
               ) : (
-                cartItems.map((item, idx) => (
-                  <div key={idx} className="border border-gray-200 rounded-xl p-4 bg-gray-50">
-                    <div className="flex justify-between items-start mb-3">
+                <ul className="cart-items">
+                  {cartItems.map((item, idx) => (
+                    <li key={idx} className="flex justify-between items-center py-2 border-b border-gray-200">
                       <div className="flex-1">
-                        <h4 className="font-semibold text-gray-900 text-lg">{item.name}</h4>
+                        <div className="font-semibold">{item.name}</div>
                         {item.options && item.options.length > 0 && (
-                          <div className="text-sm text-gray-600 mt-2">
+                          <div className="text-sm text-gray-600">
                             {item.options.map((option, optIdx) => (
                               <div key={optIdx} className="text-xs">{option}</div>
                             ))}
                           </div>
                         )}
+                        <div className="flex items-center space-x-2 mt-1">
+                          <button 
+                            onClick={() => updateQuantity(idx, item.qty - 1)}
+                            className="w-6 h-6 rounded bg-gray-200 flex items-center justify-center hover:bg-gray-300 transition-colors font-bold"
+                          >
+                            -
+                          </button>
+                          <span className="font-bold">{item.qty}</span>
+                          <button 
+                            onClick={() => updateQuantity(idx, item.qty + 1)}
+                            className="w-6 h-6 rounded bg-gray-200 flex items-center justify-center hover:bg-gray-300 transition-colors font-bold"
+                          >
+                            +
+                          </button>
+                        </div>
                       </div>
-                      <button 
-                        onClick={() => removeItem(idx)}
-                        className="text-red-500 hover:text-red-700 ml-3 p-1"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center space-x-3">
+                      <div className="text-right">
+                        <div className="font-bold text-red-600">
+                          £{((item.price * item.qty) / 100).toFixed(2)}
+                        </div>
                         <button 
-                          onClick={() => updateQuantity(idx, item.qty - 1)}
-                          className="w-10 h-10 rounded-full bg-white border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors font-bold"
+                          onClick={() => removeItem(idx)}
+                          className="text-red-500 hover:text-red-700 text-sm"
                         >
-                          -
-                        </button>
-                        <span className="w-12 text-center font-bold text-lg">{item.qty}</span>
-                        <button 
-                          onClick={() => updateQuantity(idx, item.qty + 1)}
-                          className="w-10 h-10 rounded-full bg-white border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors font-bold"
-                        >
-                          +
+                          Remove
                         </button>
                       </div>
-                      <span className="font-bold text-xl text-green-600">
-                        £{((item.price * item.qty) / 100).toFixed(2)}
-                      </span>
-                    </div>
-                  </div>
-                ))
+                    </li>
+                  ))}
+                </ul>
               )}
-            </div>
 
-            {/* Order Summary */}
-            {cartItems.length > 0 && (
-              <div className="border-t border-gray-200 pt-6 space-y-4">
-                <div className="flex justify-between text-lg">
-                  <span>Subtotal</span>
-                  <span>£{(subtotal / 100).toFixed(2)}</span>
-                </div>
-                {mode === 'delivery' && deliveryInfo?.isDeliverable && (
-                  <div className="flex justify-between text-lg">
-                    <span>Delivery</span>
-                    <span>£{deliveryFee.toFixed(2)}</span>
+              {/* Order Summary */}
+              {cartItems.length > 0 && (
+                <div className="cart-summary mt-4 pt-4 border-t border-gray-200">
+                  <div className="flex justify-between mb-2">
+                    <span>Sub‑Total:</span>
+                    <span>£{(subtotal / 100).toFixed(2)}</span>
                   </div>
-                )}
-                <div className="flex justify-between font-bold text-2xl border-t border-gray-200 pt-4">
-                  <span>Total</span>
-                  <span>£{total.toFixed(2)}</span>
+                  {mode === 'delivery' && deliveryInfo?.isDeliverable && (
+                    <div className="flex justify-between mb-2">
+                      <span>Delivery:</span>
+                      <span>£{deliveryFee.toFixed(2)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between font-bold text-lg border-t border-gray-200 pt-2">
+                    <span>Total:</span>
+                    <span>£{total.toFixed(2)}</span>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* Checkout Button */}
-            <div className="mt-8">
+              {/* Checkout Button */}
               <button 
-                disabled={cartItems.length === 0} 
+                className="checkout-btn w-full mt-4 bg-red-600 hover:bg-red-700 text-white p-3 rounded font-semibold transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+                disabled={cartItems.length === 0}
                 onClick={() => (window.location.href = '/checkout')}
-                className="w-full bg-green-600 text-white py-5 px-6 rounded-xl hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-bold text-xl shadow-lg"
               >
-                {cartItems.length === 0 ? 'Cart Empty' : 'Proceed to Checkout'}
+                {cartItems.length === 0 ? 'Cart Empty' : 'Checkout'}
               </button>
-            </div>
+            </aside>
           </div>
         </div>
       </div>
@@ -508,7 +567,7 @@ export default function MenuPage() {
                             <span className="font-semibold text-lg">{choice.name}</span>
                           </div>
                           {choice.priceDelta > 0 && (
-                            <span className="text-green-600 font-bold text-lg">
+                            <span className="text-red-600 font-bold text-lg">
                               +£{(choice.priceDelta / 100).toFixed(2)}
                             </span>
                           )}
@@ -538,7 +597,7 @@ export default function MenuPage() {
                 </span>
                 <button
                   onClick={addItemWithOptions}
-                  className="bg-green-600 text-white px-10 py-4 rounded-xl hover:bg-green-700 transition-colors font-bold text-lg shadow-lg"
+                  className="bg-red-600 text-white px-10 py-4 rounded-xl hover:bg-red-700 transition-colors font-bold text-lg shadow-lg"
                 >
                   Add to Cart
                 </button>
@@ -547,6 +606,26 @@ export default function MenuPage() {
           </div>
         </div>
       )}
+
+      {/* Footer */}
+      <footer className="bg-gray-100 py-8 mt-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <ul className="flex flex-wrap justify-center space-x-6 mb-4">
+              <li><Link href="/" className="text-gray-700 hover:text-gray-900">HOME</Link></li>
+              <li><Link href="/about" className="text-gray-700 hover:text-gray-900">ABOUT US</Link></li>
+              <li><Link href="/terms" className="text-gray-700 hover:text-gray-900">TERMS & CONDITIONS</Link></li>
+              <li><Link href="/privacy" className="text-gray-700 hover:text-gray-900">PRIVACY POLICY</Link></li>
+              <li><Link href="/cookies" className="text-gray-700 hover:text-gray-900">COOKIE POLICY</Link></li>
+              <li><Link href="/disclaimer" className="text-gray-700 hover:text-gray-900">SERVICE DISCLAIMER</Link></li>
+              <li><Link href="/contact" className="text-gray-700 hover:text-gray-900">CONTACT US</Link></li>
+            </ul>
+            <p className="text-gray-600">
+              China Palace © 2025. All rights reserved. Designed By China Palace
+            </p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
