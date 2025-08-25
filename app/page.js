@@ -16,16 +16,48 @@ export default function HomePage() {
       <header className="bg-white shadow-sm border-b sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <div className="text-2xl font-bold text-gray-900">
-                China Palace
-              </div>
+            {/* Social Icons */}
+            <div className="hidden md:flex items-center space-x-4">
+              <a href="#" className="text-gray-600 hover:text-gray-900">
+                <i className="fa fa-instagram text-xl"></i>
+              </a>
+              <a href="#" className="text-gray-600 hover:text-gray-900">
+                <i className="fa fa-facebook text-xl"></i>
+              </a>
             </div>
+            
+            {/* Navigation Left */}
             <nav className="hidden md:flex space-x-8">
               <Link href="/" className="text-gray-900 font-medium">Home</Link>
               <Link href="/menu" className="text-gray-700 hover:text-gray-900">Menu</Link>
-              <Link href="/checkout" className="text-gray-700 hover:text-gray-900">Checkout</Link>
             </nav>
+            
+            {/* Logo */}
+            <div className="flex items-center">
+              <Image 
+                src="https://erzoxdbzmmhshpkscfln.supabase.co/storage/v1/object/public/media/logo/logo01.png"
+                alt="China Palace"
+                width={120}
+                height={40}
+                className="h-10 w-auto"
+              />
+            </div>
+            
+            {/* Navigation Right */}
+            <nav className="hidden md:flex space-x-8">
+              <Link href="/feedback" className="text-gray-700 hover:text-gray-900">Feedback</Link>
+              <Link href="/contact" className="text-gray-700 hover:text-gray-900">Contact Us</Link>
+            </nav>
+            
+            {/* Login/Register */}
+            <div className="hidden md:flex items-center space-x-2">
+              <i className="fa fa-user-circle-o text-gray-600"></i>
+              <Link href="/login" className="text-gray-700 hover:text-gray-900">login</Link>
+              <span className="text-gray-600">or</span>
+              <Link href="/register" className="text-gray-700 hover:text-gray-900">Register</Link>
+            </div>
+            
+            {/* Mobile Menu Button */}
             <div className="md:hidden">
               <button className="text-gray-700">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -37,221 +69,224 @@ export default function HomePage() {
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="relative bg-gradient-to-r from-green-600 to-green-700 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div className={`transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-              <h1 className="text-4xl md:text-6xl font-bold mb-6">
-                Authentic Chinese Cuisine
-              </h1>
-              <p className="text-xl md:text-2xl mb-8 text-green-100">
-                Delicious dishes made with fresh ingredients and traditional recipes. 
-                Order online for collection or delivery.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Link 
-                  href="/menu"
-                  className="bg-white text-green-600 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-colors text-center"
-                >
-                  Order Now
-                </Link>
-                <Link 
-                  href="/menu"
-                  className="border-2 border-white text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-white hover:text-green-600 transition-colors text-center"
-                >
-                  View Menu
-                </Link>
-              </div>
-            </div>
-            <div className={`transition-all duration-1000 delay-300 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-              <div className="relative h-96 lg:h-[500px] rounded-2xl overflow-hidden shadow-2xl">
-                <div className="absolute inset-0 bg-gradient-to-br from-green-600/20 to-green-800/20 z-10"></div>
-                <div className="absolute inset-0 bg-gray-900/30 z-20"></div>
-                <div className="absolute inset-0 flex items-center justify-center z-30">
-                  <div className="text-center">
-                    <div className="text-6xl mb-4">🥢</div>
-                    <div className="text-2xl font-semibold">Fresh & Authentic</div>
-                  </div>
-                </div>
-              </div>
-            </div>
+      {/* Hero Section with Banner */}
+      <section className="relative">
+        <div className="relative h-96 md:h-[500px] overflow-hidden">
+          <Image 
+            src="https://erzoxdbzmmhshpkscfln.supabase.co/storage/v1/object/public/media/homepage/banner-1-1440x760.jpg"
+            alt="China Palace Banner"
+            fill
+            className="object-cover"
+            priority
+          />
+          <div className="absolute inset-0 bg-black bg-opacity-30"></div>
+          <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2">
+            <Link 
+              href="/menu"
+              className="bg-red-600 hover:bg-red-700 text-white px-8 py-3 rounded-lg font-semibold text-lg transition-colors"
+            >
+              Order Now
+            </Link>
           </div>
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-20 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Why Choose China Palace?
-            </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              We're committed to delivering the best Chinese dining experience with quality ingredients and authentic recipes.
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="bg-green-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl">🍜</span>
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Authentic Recipes</h3>
-              <p className="text-gray-600">Traditional Chinese recipes passed down through generations, ensuring authentic flavors.</p>
-            </div>
-            
-            <div className="text-center">
-              <div className="bg-green-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl">🥬</span>
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Fresh Ingredients</h3>
-              <p className="text-gray-600">We use only the freshest ingredients, sourced locally whenever possible.</p>
-            </div>
-            
-            <div className="text-center">
-              <div className="bg-green-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl">⚡</span>
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Fast Delivery</h3>
-              <p className="text-gray-600">Quick delivery and collection service to ensure your food arrives hot and fresh.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Popular Dishes Preview */}
-      <section className="py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Popular Dishes
-            </h2>
-            <p className="text-xl text-gray-600">
-              Discover our most loved dishes
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <div className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
-              <div className="h-48 bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center">
-                <span className="text-4xl">🦆</span>
-              </div>
-              <div className="p-6">
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Aromatic Duck</h3>
-                <p className="text-gray-600 mb-4">Crispy aromatic duck with pancakes, spring onion & cucumber.</p>
-                <div className="flex justify-between items-center">
-                  <span className="text-2xl font-bold text-green-600">£9.00</span>
-                  <Link 
-                    href="/menu"
-                    className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
-                  >
-                    Order Now
-                  </Link>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
-              <div className="h-48 bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center">
-                <span className="text-4xl">🍛</span>
-              </div>
-              <div className="p-6">
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Set Meal A</h3>
-                <p className="text-gray-600 mb-4">Complete meal for two people with your choice of main course.</p>
-                <div className="flex justify-between items-center">
-                  <span className="text-2xl font-bold text-green-600">£10.00</span>
-                  <Link 
-                    href="/menu"
-                    className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
-                  >
-                    Order Now
-                  </Link>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
-              <div className="h-48 bg-gradient-to-br from-red-400 to-pink-500 flex items-center justify-center">
-                <span className="text-4xl">🥘</span>
-              </div>
-              <div className="p-6">
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Special Dishes</h3>
-                <p className="text-gray-600 mb-4">Explore our chef's special selection of authentic Chinese dishes.</p>
-                <div className="flex justify-between items-center">
-                  <span className="text-2xl font-bold text-green-600">From £8.50</span>
-                  <Link 
-                    href="/menu"
-                    className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
-                  >
-                    View Menu
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-20 bg-green-600 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6">
-            Ready to Order?
-          </h2>
-          <p className="text-xl mb-8 text-green-100">
-            Browse our full menu and place your order online for collection or delivery.
+      {/* About Us Section */}
+      <section className="py-16 bg-gray-50">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-4xl font-bold text-gray-900 mb-6">ABOUT US</h2>
+          <p className="text-xl text-gray-600 mb-8 leading-relaxed">
+            Welcome to China Palace, your local destination for authentic and freshly prepared Chinese cuisine. 
+            We take pride in serving delicious dishes made with traditional recipes, high-quality ingredients, 
+            and a passion for flavor. Whether you're craving classic favourites like Sweet & Sour Chicken, 
+            Crispy Beef, or freshly made Chow Mein, we've got something to satisfy every appetite.
           </p>
           <Link 
             href="/menu"
-            className="bg-white text-green-600 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-colors inline-block"
+            className="bg-gray-800 hover:bg-gray-900 text-white px-8 py-4 rounded-lg font-semibold text-lg transition-colors"
           >
-            Start Ordering
+            FULL MENU
           </Link>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div>
-              <h3 className="text-xl font-semibold mb-4">China Palace</h3>
-              <p className="text-gray-400">
-                Authentic Chinese cuisine delivered to your door.
-              </p>
+      {/* Online Menu Section */}
+      <section className="py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-4xl font-bold text-gray-900 text-center mb-12">ONLINE MENU</h2>
+          
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+            <div className="text-center">
+              <div className="mb-4">
+                <Image 
+                  src="https://erzoxdbzmmhshpkscfln.supabase.co/storage/v1/object/public/media/homepage/online-1.png"
+                  alt="Beef Dishes"
+                  width={150}
+                  height={150}
+                  className="w-full h-auto rounded-lg"
+                />
+              </div>
+              <Link 
+                href="/menu"
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-base font-medium transition-colors"
+              >
+                BEEF DISHES
+              </Link>
             </div>
             
-            <div>
-              <h4 className="font-semibold mb-4">Contact</h4>
-              <p className="text-gray-400 mb-2">12 Barnsley Road</p>
-              <p className="text-gray-400 mb-2">Hemsworth, Pontefract</p>
-              <p className="text-gray-400 mb-2">WF9 4PY</p>
-              <p className="text-gray-400">01977 123456</p>
+            <div className="text-center">
+              <div className="mb-4">
+                <Image 
+                  src="https://erzoxdbzmmhshpkscfln.supabase.co/storage/v1/object/public/media/homepage/online-02.png"
+                  alt="Soup"
+                  width={150}
+                  height={150}
+                  className="w-full h-auto rounded-lg"
+                />
+              </div>
+              <Link 
+                href="/menu"
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-base font-medium transition-colors"
+              >
+                SOUP
+              </Link>
             </div>
             
-            <div>
-              <h4 className="font-semibold mb-4">Opening Hours</h4>
-              <p className="text-gray-400 mb-1">Mon: 12:00-15:00, 17:00-23:00</p>
-              <p className="text-gray-400 mb-1">Tue: Closed</p>
-              <p className="text-gray-400 mb-1">Wed: 12:00-15:00, 17:00-23:00</p>
-              <p className="text-gray-400 mb-1">Thu: 12:00-15:00, 17:00-23:00</p>
-              <p className="text-gray-400 mb-1">Fri-Sun: 16:00-00:00</p>
+            <div className="text-center">
+              <div className="mb-4">
+                <Image 
+                  src="https://erzoxdbzmmhshpkscfln.supabase.co/storage/v1/object/public/media/homepage/online-3.png"
+                  alt="Rice Dishes"
+                  width={150}
+                  height={150}
+                  className="w-full h-auto rounded-lg"
+                />
+              </div>
+              <Link 
+                href="/menu"
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-base font-medium transition-colors"
+              >
+                RICE DISHES
+              </Link>
             </div>
             
-            <div>
-              <h4 className="font-semibold mb-4">Quick Links</h4>
-              <ul className="space-y-2">
-                <li><Link href="/menu" className="text-gray-400 hover:text-white">Menu</Link></li>
-                <li><Link href="/checkout" className="text-gray-400 hover:text-white">Order Online</Link></li>
-                <li><Link href="/" className="text-gray-400 hover:text-white">Home</Link></li>
-              </ul>
+            <div className="text-center">
+              <div className="mb-4">
+                <Image 
+                  src="https://erzoxdbzmmhshpkscfln.supabase.co/storage/v1/object/public/media/homepage/online-4.png"
+                  alt="Duck Dishes"
+                  width={150}
+                  height={150}
+                  className="w-full h-auto rounded-lg"
+                />
+              </div>
+              <Link 
+                href="/menu"
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-base font-medium transition-colors"
+              >
+                DUCK DISHES
+              </Link>
+            </div>
+            
+            <div className="text-center">
+              <div className="mb-4">
+                <Image 
+                  src="https://erzoxdbzmmhshpkscfln.supabase.co/storage/v1/object/public/media/homepage/online-5.png"
+                  alt="Curry Dishes"
+                  width={150}
+                  height={150}
+                  className="w-full h-auto rounded-lg"
+                />
+              </div>
+              <Link 
+                href="/menu"
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-base font-medium transition-colors"
+              >
+                CURRY DISHES
+              </Link>
+            </div>
+            
+            <div className="text-center">
+              <div className="mb-4">
+                <Image 
+                  src="https://erzoxdbzmmhshpkscfln.supabase.co/storage/v1/object/public/media/homepage/online-6.png"
+                  alt="Chicken Dishes"
+                  width={150}
+                  height={150}
+                  className="w-full h-auto rounded-lg"
+                />
+              </div>
+              <Link 
+                href="/menu"
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-base font-medium transition-colors"
+              >
+                CHICKEN DISHES
+              </Link>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Allergy Advice Section */}
+      <section className="py-16 bg-gray-50">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-4xl font-bold text-gray-900 mb-6">ALLERGY ADVICE</h2>
+          <p className="text-xl text-gray-600">
+            If you have any allergies to any products, please inform us before ordering. We will do our best to advise you.
+          </p>
+        </div>
+      </section>
+
+      {/* Address and Opening Hours Section */}
+      <section className="py-16">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h3 className="text-3xl font-bold text-gray-900 mb-4">ADDRESS</h3>
+          <p className="text-xl text-gray-600 mb-2">3A North St, Crowland Peterborough, PE6 0EG</p>
+          <p className="text-xl text-gray-600 mb-8">CALL: 01733 211788</p>
           
-          <div className="border-t border-gray-800 mt-8 pt-8 text-center">
-            <p className="text-gray-400">
-              © 2025 China Palace. All rights reserved.
+          <h4 className="text-2xl font-bold text-gray-900 mb-4">ALL CREDIT CARDS ACCEPTED</h4>
+          <div className="mb-8">
+            <Image 
+              src="https://erzoxdbzmmhshpkscfln.supabase.co/storage/v1/object/public/media/homepage/cardss.png"
+              alt="All Credit Cards Accepted"
+              width={200}
+              height={60}
+              className="mx-auto"
+            />
+          </div>
+          
+          <h3 className="text-3xl font-bold text-gray-900 mb-6">OPENING HOURS</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-md mx-auto">
+            <div className="text-left">
+              <p className="text-lg text-gray-600">Sunday: 16:30 - 22:00</p>
+              <p className="text-lg text-gray-600">Monday: 16:30 - 22:00</p>
+              <p className="text-lg text-gray-600">Tuesday: Closed</p>
+              <p className="text-lg text-gray-600">Wednesday: 16:30 - 22:00</p>
+            </div>
+            <div className="text-left">
+              <p className="text-lg text-gray-600">Thursday: 16:30 - 22:00</p>
+              <p className="text-lg text-gray-600">Friday: 16:30 - 22:00</p>
+              <p className="text-lg text-gray-600">Saturday: 16:30 - 22:00</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-gray-100 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <ul className="flex flex-wrap justify-center space-x-6 mb-4">
+              <li><Link href="/" className="text-gray-700 hover:text-gray-900">HOME</Link></li>
+              <li><Link href="/about" className="text-gray-700 hover:text-gray-900">ABOUT US</Link></li>
+              <li><Link href="/terms" className="text-gray-700 hover:text-gray-900">TERMS & CONDITIONS</Link></li>
+              <li><Link href="/privacy" className="text-gray-700 hover:text-gray-900">PRIVACY POLICY</Link></li>
+              <li><Link href="/cookies" className="text-gray-700 hover:text-gray-900">COOKIE POLICY</Link></li>
+              <li><Link href="/disclaimer" className="text-gray-700 hover:text-gray-900">SERVICE DISCLAIMER</Link></li>
+              <li><Link href="/contact" className="text-gray-700 hover:text-gray-900">CONTACT US</Link></li>
+            </ul>
+            <p className="text-gray-600">
+              China Palace © 2025. All rights reserved. Designed By China Palace
             </p>
           </div>
         </div>
