@@ -16,6 +16,54 @@ export default function MenuPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [requestedTime, setRequestedTime] = useState('ASAP');
 
+  // Business configuration - these would come from Supabase in production
+  const businessConfig = {
+    openingTime: '16:30',
+    closingTime: '22:00',
+    collectionTimeMinutes: 15, // 15 minutes for collection
+    deliveryTimeMinutes: 45,   // 45 minutes for delivery
+    deliveryPostcodes: ['PE6 0EG', 'PE6 0EH', 'PE6 0EJ'], // Valid delivery postcodes
+  };
+
+  // Generate time slots based on current time and business config
+  const generateTimeSlots = (mode) => {
+    const now = new Date();
+    const currentTime = now.getHours() * 60 + now.getMinutes(); // Current time in minutes
+    
+    // Parse business hours
+    const [openHour, openMin] = businessConfig.openingTime.split(':').map(Number);
+    const [closeHour, closeMin] = businessConfig.closingTime.split(':').map(Number);
+    const openTimeMinutes = openHour * 60 + openMin;
+    const closeTimeMinutes = closeHour * 60 + closeMin;
+    
+    const timeSlots = ['ASAP'];
+    const interval = mode === 'collection' ? businessConfig.collectionTimeMinutes : businessConfig.deliveryTimeMinutes;
+    
+    // Determine start time
+    let startTime;
+    if (currentTime < openTimeMinutes) {
+      // Before opening - start from opening time
+      startTime = openTimeMinutes;
+    } else {
+      // After opening - start from current time + interval
+      startTime = Math.ceil(currentTime / interval) * interval;
+    }
+    
+    // Generate time slots
+    for (let time = startTime; time < closeTimeMinutes; time += interval) {
+      const hours = Math.floor(time / 60);
+      const minutes = time % 60;
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      const displayHours = hours > 12 ? hours - 12 : hours === 0 ? 12 : hours;
+      const displayMinutes = minutes.toString().padStart(2, '0');
+      
+      const timeString = `${displayHours}:${displayMinutes} ${ampm}`;
+      timeSlots.push(timeString);
+    }
+    
+    return timeSlots;
+  };
+
   // Add CSS styles for the menu layout
   useEffect(() => {
     const style = document.createElement('style');
@@ -77,6 +125,10 @@ export default function MenuPage() {
       .row { display: flex; flex-wrap: wrap; }
       .col-md-3 { flex: 0 0 25%; max-width: 25%; padding: 0 15px; }
       .col-md-6 { flex: 0 0 50%; max-width: 50%; padding: 0 15px; }
+      .business-hours { font-size: 0.8rem; color: #666; margin-top: 5px; }
+      .delivery-status { font-size: 0.9rem; margin-top: 5px; }
+      .delivery-status.success { color: #28a745; }
+      .delivery-status.error { color: #dc3545; }
       @media (max-width: 768px) {
         .col-md-3, .col-md-6 { flex: 0 0 100%; max-width: 100%; }
       }
@@ -104,6 +156,14 @@ export default function MenuPage() {
     }
     load();
   }, []);
+
+  // Update time slots when mode changes
+  useEffect(() => {
+    const timeSlots = generateTimeSlots(mode);
+    if (!timeSlots.includes(requestedTime)) {
+      setRequestedTime(timeSlots[0]);
+    }
+  }, [mode]);
 
   function openOptionsModal(item) {
     setSelectedItem(item);
@@ -214,6 +274,20 @@ export default function MenuPage() {
       alert('Please enter postcode');
       return;
     }
+
+    // Check if postcode is valid for delivery
+    const isValidPostcode = businessConfig.deliveryPostcodes.some(validPostcode => 
+      postcode.toUpperCase().replace(/\s/g, '') === validPostcode.replace(/\s/g, '')
+    );
+
+    if (!isValidPostcode) {
+      setDeliveryInfo({
+        isDeliverable: false,
+        reason: 'Sorry, we do not deliver to your postcode. You can place an order and collect from store.'
+      });
+      return;
+    }
+
     try {
       const subtotal = cartItems.reduce((sum, it) => sum + it.price * it.qty, 0);
       const res = await fetch(process.env.NEXT_PUBLIC_API_URL + '/api/delivery/quote', {
@@ -225,6 +299,10 @@ export default function MenuPage() {
       setDeliveryInfo(data);
     } catch (e) {
       console.error(e);
+      setDeliveryInfo({
+        isDeliverable: false,
+        reason: 'Error checking delivery availability. Please try again.'
+      });
     }
   }
 
@@ -253,6 +331,9 @@ export default function MenuPage() {
   const subtotal = cartItems.reduce((sum, it) => sum + it.price * it.qty, 0);
   const deliveryFee = deliveryInfo?.feePence ? deliveryInfo.feePence / 100 : 0;
   const total = subtotal / 100 + deliveryFee;
+
+  // Generate time slots for current mode
+  const timeSlots = generateTimeSlots(mode);
 
   if (isLoading) {
     return (
@@ -386,6 +467,7 @@ export default function MenuPage() {
                   onChange={() => setMode('delivery')}
                 />
                 <label htmlFor="del" className="ml-2">Home Delivery</label>
+                <div className="business-hours">Starts at: 05:15 pm</div>
               </div>
               <div className="option-row mb-4">
                 <input 
@@ -396,6 +478,12 @@ export default function MenuPage() {
                   onChange={() => setMode('collection')}
                 />
                 <label htmlFor="col" className="ml-2">Collection</label>
+                <div className="business-hours">Starts at: 04:45 pm</div>
+              </div>
+
+              {/* Business Hours Display */}
+              <div className="business-hours mb-4">
+                Store opening {businessConfig.openingTime}-{businessConfig.closingTime}
               </div>
 
               {/* Requested Time */}
@@ -406,10 +494,9 @@ export default function MenuPage() {
                 onChange={(e) => setRequestedTime(e.target.value)}
                 className="w-full p-2 border border-gray-300 rounded mb-4"
               >
-                <option>ASAP</option>
-                <option>30 Minutes</option>
-                <option>1 Hour</option>
-                <option>Tomorrow</option>
+                {timeSlots.map((time, index) => (
+                  <option key={index} value={time}>{time}</option>
+                ))}
               </select>
 
               {/* Delivery Postcode Check */}
@@ -431,10 +518,10 @@ export default function MenuPage() {
                     </button>
                   </div>
                   {deliveryInfo && (
-                    <div className={`text-sm ${deliveryInfo.isDeliverable ? 'text-green-600' : 'text-red-600'}`}>
+                    <div className={`delivery-status ${deliveryInfo.isDeliverable ? 'success' : 'error'}`}>
                       {deliveryInfo.isDeliverable
                         ? `Delivery fee £${(deliveryInfo.feePence / 100).toFixed(2)}, minimum order £${(deliveryInfo.minOrderPence / 100).toFixed(2)}`
-                        : `Not deliverable: ${deliveryInfo.reason}`}
+                        : deliveryInfo.reason}
                     </div>
                   )}
                 </div>
@@ -514,7 +601,7 @@ export default function MenuPage() {
               {/* Checkout Button */}
               <button 
                 className="checkout-btn w-full mt-4 bg-red-600 hover:bg-red-700 text-white p-3 rounded font-semibold transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
-                disabled={cartItems.length === 0}
+                disabled={cartItems.length === 0 || (mode === 'delivery' && (!deliveryInfo || !deliveryInfo.isDeliverable))}
                 onClick={() => (window.location.href = '/checkout')}
               >
                 {cartItems.length === 0 ? 'Cart Empty' : 'Checkout'}

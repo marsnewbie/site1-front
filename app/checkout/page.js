@@ -6,9 +6,17 @@ import Image from 'next/image';
 export default function CheckoutPage() {
   const [cartItems, setCartItems] = useState([]);
   const [mode, setMode] = useState('collection');
-  const [contact, setContact] = useState({ name: '', phone: '', email: '' });
-  const [postcode, setPostcode] = useState('');
-  const [addressLine, setAddressLine] = useState('');
+  const [contact, setContact] = useState({ 
+    firstName: '', 
+    lastName: '', 
+    email: '', 
+    phone: '',
+    postcode: '',
+    address: '',
+    street: '',
+    address2: '',
+    city: ''
+  });
   const [quote, setQuote] = useState(null);
   const [message, setMessage] = useState('');
   const [isSubmitting, setSubmitting] = useState(false);
@@ -16,6 +24,16 @@ export default function CheckoutPage() {
   const [accountType, setAccountType] = useState('guest');
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [agreeTerms, setAgreeTerms] = useState(false);
+  const [formErrors, setFormErrors] = useState({});
+
+  // Business configuration
+  const businessConfig = {
+    openingTime: '16:30',
+    closingTime: '22:00',
+    collectionTimeMinutes: 15,
+    deliveryTimeMinutes: 45,
+    deliveryPostcodes: ['PE6 0EG', 'PE6 0EH', 'PE6 0EJ'],
+  };
 
   // On mount, read cart from sessionStorage (passed from menu page)
   useEffect(() => {
@@ -29,27 +47,80 @@ export default function CheckoutPage() {
   const deliveryFee = quote?.feePence || 0;
   const minOrder = quote?.minOrderPence || 0;
 
+  // Validate form fields
+  const validateForm = () => {
+    const errors = {};
+
+    // Required fields for all users
+    if (!contact.firstName.trim()) errors.firstName = 'First name is required';
+    if (!contact.email.trim()) {
+      errors.email = 'Email is required';
+    } else if (!/\S+@\S+\.\S+/.test(contact.email)) {
+      errors.email = 'Please enter a valid email address';
+    }
+    if (!contact.phone.trim()) errors.phone = 'Phone number is required';
+
+    // Additional fields for delivery
+    if (mode === 'delivery') {
+      if (!contact.postcode.trim()) errors.postcode = 'Postcode is required';
+      if (!contact.street.trim()) errors.street = 'Street name is required';
+    }
+
+    // Additional fields for new account
+    if (accountType === 'new') {
+      if (!contact.lastName.trim()) errors.lastName = 'Last name is required';
+      if (!contact.postcode.trim()) errors.postcode = 'Postcode is required';
+      if (!contact.street.trim()) errors.street = 'Street name is required';
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   async function fetchQuote() {
-    if (!postcode) {
+    if (!contact.postcode) {
       alert('Please enter postcode');
       return;
     }
+
+    // Check if postcode is valid for delivery
+    const isValidPostcode = businessConfig.deliveryPostcodes.some(validPostcode => 
+      contact.postcode.toUpperCase().replace(/\s/g, '') === validPostcode.replace(/\s/g, '')
+    );
+
+    if (!isValidPostcode) {
+      setQuote({
+        isDeliverable: false,
+        reason: 'Sorry we do not deliver to your post code. You can place an order and Collect from Store.'
+      });
+      return;
+    }
+
     try {
       const res = await fetch(process.env.NEXT_PUBLIC_API_URL + '/api/delivery/quote', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mode: 'delivery', postcode, subtotalPence: subtotal }),
+        body: JSON.stringify({ mode: 'delivery', postcode: contact.postcode, subtotalPence: subtotal }),
       });
       const data = await res.json();
       setQuote(data);
     } catch (e) {
       console.error(e);
+      setQuote({
+        isDeliverable: false,
+        reason: 'Error checking delivery availability. Please try again.'
+      });
     }
   }
 
   async function submitOrder() {
+    if (!validateForm()) {
+      setMessage('Please fill in all required fields correctly.');
+      return;
+    }
+
     if (!agreeTerms) {
-      alert('Please agree to the terms and conditions');
+      setMessage('Please agree to the terms and conditions');
       return;
     }
     
@@ -62,7 +133,6 @@ export default function CheckoutPage() {
         body: JSON.stringify({
           mode,
           contact,
-          address: { postcode, line1: addressLine },
           cartItems,
           subtotalPence: subtotal,
           deliveryFeePence: deliveryFee,
@@ -232,8 +302,11 @@ export default function CheckoutPage() {
               </div>
               <div className="summary-body">
                 {/* Guest checkout accordion */}
-                <details className="border border-gray-300 rounded mb-4">
-                  <summary className="bg-red-600 text-white p-3 cursor-pointer font-bold rounded">
+                <details className="border border-gray-300 rounded mb-4" open={accountType === 'guest'}>
+                  <summary 
+                    className="bg-red-600 text-white p-3 cursor-pointer font-bold rounded"
+                    onClick={() => setAccountType('guest')}
+                  >
                     I'm A Guest
                   </summary>
                   <div className="panel-body p-4 bg-white border-t border-gray-300">
@@ -245,11 +318,12 @@ export default function CheckoutPage() {
                       <input 
                         type="text" 
                         id="guest-first-name" 
-                        value={contact.name}
-                        onChange={(e) => setContact({...contact, name: e.target.value})}
-                        className="w-full p-2 border border-gray-300 rounded"
+                        value={contact.firstName}
+                        onChange={(e) => setContact({...contact, firstName: e.target.value})}
+                        className={`w-full p-2 border rounded ${formErrors.firstName ? 'border-red-500' : 'border-gray-300'}`}
                         placeholder="First Name"
                       />
+                      {formErrors.firstName && <div className="text-red-500 text-sm mt-1">{formErrors.firstName}</div>}
                     </div>
                     <div className="form-group mb-4">
                       <label htmlFor="guest-email" className="block mb-2 font-semibold">E‑Mail<span className="text-red-500">*</span></label>
@@ -258,10 +332,10 @@ export default function CheckoutPage() {
                         id="guest-email" 
                         value={contact.email}
                         onChange={(e) => setContact({...contact, email: e.target.value})}
-                        className="w-full p-2 border border-gray-300 rounded"
+                        className={`w-full p-2 border rounded ${formErrors.email ? 'border-red-500' : 'border-gray-300'}`}
                         placeholder="Email"
                       />
-                      <small className="text-red-500 text-sm">The email is required and cannot be empty</small>
+                      {formErrors.email && <div className="text-red-500 text-sm mt-1">{formErrors.email}</div>}
                     </div>
                     <div className="form-group mb-4">
                       <label htmlFor="guest-phone" className="block mb-2 font-semibold">Telephone<span className="text-red-500">*</span></label>
@@ -270,9 +344,10 @@ export default function CheckoutPage() {
                         id="guest-phone" 
                         value={contact.phone}
                         onChange={(e) => setContact({...contact, phone: e.target.value})}
-                        className="w-full p-2 border border-gray-300 rounded"
+                        className={`w-full p-2 border rounded ${formErrors.phone ? 'border-red-500' : 'border-gray-300'}`}
                         placeholder="Telephone"
                       />
+                      {formErrors.phone && <div className="text-red-500 text-sm mt-1">{formErrors.phone}</div>}
                     </div>
                     {mode === 'delivery' && (
                       <>
@@ -281,32 +356,36 @@ export default function CheckoutPage() {
                           <input 
                             type="text" 
                             id="guest-postcode" 
-                            value={postcode}
-                            onChange={(e) => setPostcode(e.target.value)}
-                            className="w-full p-2 border border-gray-300 rounded"
+                            value={contact.postcode}
+                            onChange={(e) => setContact({...contact, postcode: e.target.value})}
+                            className={`w-full p-2 border rounded ${formErrors.postcode ? 'border-red-500' : 'border-gray-300'}`}
                             placeholder="Post Code"
                           />
+                          {formErrors.postcode && <div className="text-red-500 text-sm mt-1">{formErrors.postcode}</div>}
                         </div>
                         <div className="form-group mb-4">
                           <label htmlFor="guest-address" className="block mb-2 font-semibold">Address</label>
                           <input 
                             type="text" 
                             id="guest-address" 
-                            value={addressLine}
-                            onChange={(e) => setAddressLine(e.target.value)}
+                            value={contact.address}
+                            onChange={(e) => setContact({...contact, address: e.target.value})}
                             className="w-full p-2 border border-gray-300 rounded"
                             placeholder="Address"
                           />
                         </div>
                       </>
                     )}
-                    <p className="text-sm">Not now, I will create an account later <a href="#" className="text-red-600 hover:text-red-800">Create An Account</a></p>
+                    <p className="text-sm">Not now, I will create an account later <Link href="/register" className="text-red-600 hover:text-red-800">Create An Account</Link></p>
                   </div>
                 </details>
 
                 {/* Returning customer accordion */}
-                <details className="border border-gray-300 rounded mb-4">
-                  <summary className="bg-red-600 text-white p-3 cursor-pointer font-bold rounded">
+                <details className="border border-gray-300 rounded mb-4" open={accountType === 'returning'}>
+                  <summary 
+                    className="bg-red-600 text-white p-3 cursor-pointer font-bold rounded"
+                    onClick={() => setAccountType('returning')}
+                  >
                     I'm Already A Customer
                   </summary>
                   <div className="panel-body p-4 bg-white border-t border-gray-300">
@@ -331,7 +410,7 @@ export default function CheckoutPage() {
                     </div>
                     <button className="btn bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">Login</button>
                     <div className="form-group mt-4">
-                      <a href="#" className="text-red-600 hover:text-red-800">Forgotten Password</a><br/>
+                      <Link href="/forgot-password" className="text-red-600 hover:text-red-800">Forgotten Password</Link><br/>
                       <label className="flex items-center mt-2">
                         <input type="checkbox" className="mr-2" />
                         Remember Me
@@ -341,8 +420,11 @@ export default function CheckoutPage() {
                 </details>
 
                 {/* New account accordion */}
-                <details className="border border-gray-300 rounded">
-                  <summary className="bg-red-600 text-white p-3 cursor-pointer font-bold rounded">
+                <details className="border border-gray-300 rounded" open={accountType === 'new'}>
+                  <summary 
+                    className="bg-red-600 text-white p-3 cursor-pointer font-bold rounded"
+                    onClick={() => setAccountType('new')}
+                  >
                     I'm New Here (I Want To Register An Account)
                   </summary>
                   <div className="panel-body p-4 bg-white border-t border-gray-300">
@@ -352,27 +434,48 @@ export default function CheckoutPage() {
                       <input 
                         type="text" 
                         id="new-first-name" 
-                        className="w-full p-2 border border-gray-300 rounded"
+                        value={contact.firstName}
+                        onChange={(e) => setContact({...contact, firstName: e.target.value})}
+                        className={`w-full p-2 border rounded ${formErrors.firstName ? 'border-red-500' : 'border-gray-300'}`}
                         placeholder="First Name"
                       />
+                      {formErrors.firstName && <div className="text-red-500 text-sm mt-1">{formErrors.firstName}</div>}
+                    </div>
+                    <div className="form-group mb-4">
+                      <label htmlFor="new-last-name" className="block mb-2 font-semibold">Last Name<span className="text-red-500">*</span></label>
+                      <input 
+                        type="text" 
+                        id="new-last-name" 
+                        value={contact.lastName}
+                        onChange={(e) => setContact({...contact, lastName: e.target.value})}
+                        className={`w-full p-2 border rounded ${formErrors.lastName ? 'border-red-500' : 'border-gray-300'}`}
+                        placeholder="Last Name"
+                      />
+                      {formErrors.lastName && <div className="text-red-500 text-sm mt-1">{formErrors.lastName}</div>}
                     </div>
                     <div className="form-group mb-4">
                       <label htmlFor="new-email" className="block mb-2 font-semibold">E‑Mail<span className="text-red-500">*</span></label>
                       <input 
                         type="email" 
                         id="new-email" 
-                        className="w-full p-2 border border-gray-300 rounded"
+                        value={contact.email}
+                        onChange={(e) => setContact({...contact, email: e.target.value})}
+                        className={`w-full p-2 border rounded ${formErrors.email ? 'border-red-500' : 'border-gray-300'}`}
                         placeholder="Email"
                       />
+                      {formErrors.email && <div className="text-red-500 text-sm mt-1">{formErrors.email}</div>}
                     </div>
                     <div className="form-group mb-4">
                       <label htmlFor="new-phone" className="block mb-2 font-semibold">Telephone<span className="text-red-500">*</span></label>
                       <input 
                         type="text" 
                         id="new-phone" 
-                        className="w-full p-2 border border-gray-300 rounded"
+                        value={contact.phone}
+                        onChange={(e) => setContact({...contact, phone: e.target.value})}
+                        className={`w-full p-2 border rounded ${formErrors.phone ? 'border-red-500' : 'border-gray-300'}`}
                         placeholder="Telephone"
                       />
+                      {formErrors.phone && <div className="text-red-500 text-sm mt-1">{formErrors.phone}</div>}
                     </div>
                     <h5 className="font-bold mb-4">Your Password</h5>
                     <div className="form-group mb-4">
@@ -399,17 +502,56 @@ export default function CheckoutPage() {
                       <input 
                         type="text" 
                         id="new-postcode" 
-                        className="w-full p-2 border border-gray-300 rounded"
+                        value={contact.postcode}
+                        onChange={(e) => setContact({...contact, postcode: e.target.value})}
+                        className={`w-full p-2 border rounded ${formErrors.postcode ? 'border-red-500' : 'border-gray-300'}`}
                         placeholder="Post Code"
                       />
+                      {formErrors.postcode && <div className="text-red-500 text-sm mt-1">{formErrors.postcode}</div>}
                     </div>
                     <div className="form-group mb-4">
                       <label htmlFor="new-address" className="block mb-2 font-semibold">Address</label>
                       <input 
                         type="text" 
                         id="new-address" 
+                        value={contact.address}
+                        onChange={(e) => setContact({...contact, address: e.target.value})}
                         className="w-full p-2 border border-gray-300 rounded"
                         placeholder="Address"
+                      />
+                    </div>
+                    <div className="form-group mb-4">
+                      <label htmlFor="new-street" className="block mb-2 font-semibold">Street Name<span className="text-red-500">*</span></label>
+                      <input 
+                        type="text" 
+                        id="new-street" 
+                        value={contact.street}
+                        onChange={(e) => setContact({...contact, street: e.target.value})}
+                        className={`w-full p-2 border rounded ${formErrors.street ? 'border-red-500' : 'border-gray-300'}`}
+                        placeholder="Street Name"
+                      />
+                      {formErrors.street && <div className="text-red-500 text-sm mt-1">{formErrors.street}</div>}
+                    </div>
+                    <div className="form-group mb-4">
+                      <label htmlFor="new-address2" className="block mb-2 font-semibold">Address 2</label>
+                      <input 
+                        type="text" 
+                        id="new-address2" 
+                        value={contact.address2}
+                        onChange={(e) => setContact({...contact, address2: e.target.value})}
+                        className="w-full p-2 border border-gray-300 rounded"
+                        placeholder="Address 2"
+                      />
+                    </div>
+                    <div className="form-group mb-4">
+                      <label htmlFor="new-city" className="block mb-2 font-semibold">City</label>
+                      <input 
+                        type="text" 
+                        id="new-city" 
+                        value={contact.city}
+                        onChange={(e) => setContact({...contact, city: e.target.value})}
+                        className="w-full p-2 border border-gray-300 rounded"
+                        placeholder="City"
                       />
                     </div>
                     <div className="form-group mb-4">
@@ -474,7 +616,7 @@ export default function CheckoutPage() {
                   onChange={(e) => setAgreeTerms(e.target.checked)}
                   className="mr-2"
                 />
-                I have read and agree to the <a href="#" className="text-red-600 hover:text-red-800">Terms & Conditions</a> as well as <a href="#" className="text-red-600 hover:text-red-800">Privacy Policy</a>.
+                I have read and agree to the <Link href="/terms" className="text-red-600 hover:text-red-800">Terms & Conditions</Link> as well as <Link href="/privacy" className="text-red-600 hover:text-red-800">Privacy Policy</Link>.
               </label>
             </div>
 
