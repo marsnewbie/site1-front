@@ -15,41 +15,67 @@ export default function MenuPage() {
   const [mode, setMode] = useState('collection');
   const [isLoading, setIsLoading] = useState(true);
   const [requestedTime, setRequestedTime] = useState('ASAP');
+  const [storeConfig, setStoreConfig] = useState(null);
 
-  // Business configuration - these would come from Supabase in production
-  const businessConfig = {
-    openingTime: '16:30',
-    closingTime: '22:00',
-    collectionTimeMinutes: 15, // 15 minutes for collection
-    deliveryTimeMinutes: 45,   // 45 minutes for delivery
-  };
+  // Load store configuration from database
+  useEffect(() => {
+    async function loadStoreConfig() {
+      try {
+        const res = await fetch(process.env.NEXT_PUBLIC_API_URL + '/api/store/config');
+        if (res.ok) {
+          const config = await res.json();
+          setStoreConfig(config);
+        }
+      } catch (e) {
+        console.error('Error loading store config:', e);
+        // Fallback to default config
+        setStoreConfig({
+          collection_lead_time_minutes: 15,
+          delivery_lead_time_minutes: 45,
+          collection_buffer_before_close_minutes: 15,
+          delivery_buffer_before_close_minutes: 15
+        });
+      }
+    }
+    loadStoreConfig();
+  }, []);
 
-  // Generate time slots based on current time and business config
+  // Generate time slots based on current time and store config
   const generateTimeSlots = (mode) => {
+    if (!storeConfig) return ['ASAP'];
+    
     const now = new Date();
     const currentTime = now.getHours() * 60 + now.getMinutes(); // Current time in minutes
+    const currentDay = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
     
-    // Parse business hours
-    const [openHour, openMin] = businessConfig.openingTime.split(':').map(Number);
-    const [closeHour, closeMin] = businessConfig.closingTime.split(':').map(Number);
-    const openTimeMinutes = openHour * 60 + openMin;
-    const closeTimeMinutes = closeHour * 60 + closeMin;
+    // Get today's opening hours from database
+    // For now, using simplified logic - you can enhance this to use actual opening hours
+    const todayOpenTime = 16 * 60; // 16:00 in minutes
+    const todayCloseTime = 23 * 60; // 23:00 in minutes
     
     const timeSlots = ['ASAP'];
-    const interval = mode === 'collection' ? businessConfig.collectionTimeMinutes : businessConfig.deliveryTimeMinutes;
+    const interval = mode === 'collection' 
+      ? storeConfig.collection_lead_time_minutes 
+      : storeConfig.delivery_lead_time_minutes;
+    
+    const bufferMinutes = mode === 'collection'
+      ? storeConfig.collection_buffer_before_close_minutes
+      : storeConfig.delivery_buffer_before_close_minutes;
     
     // Determine start time
     let startTime;
-    if (currentTime < openTimeMinutes) {
+    if (currentTime < todayOpenTime) {
       // Before opening - start from opening time
-      startTime = openTimeMinutes;
+      startTime = todayOpenTime;
     } else {
       // After opening - start from current time + interval
       startTime = Math.ceil(currentTime / interval) * interval;
     }
     
-    // Generate time slots
-    for (let time = startTime; time < closeTimeMinutes; time += interval) {
+    // Generate time slots until closing time minus buffer
+    const latestTime = todayCloseTime - bufferMinutes;
+    
+    for (let time = startTime; time < latestTime; time += interval) {
       const hours = Math.floor(time / 60);
       const minutes = time % 60;
       const ampm = hours >= 12 ? 'PM' : 'AM';
@@ -338,13 +364,15 @@ export default function MenuPage() {
     load();
   }, []);
 
-  // Update time slots when mode changes
+  // Update time slots when mode changes or store config loads
   useEffect(() => {
-    const timeSlots = generateTimeSlots(mode);
-    if (!timeSlots.includes(requestedTime)) {
-      setRequestedTime(timeSlots[0]);
+    if (storeConfig) {
+      const timeSlots = generateTimeSlots(mode);
+      if (!timeSlots.includes(requestedTime)) {
+        setRequestedTime(timeSlots[0]);
+      }
     }
-  }, [mode]);
+  }, [mode, storeConfig]);
 
   function openOptionsModal(item) {
     setSelectedItem(item);
@@ -503,7 +531,7 @@ export default function MenuPage() {
   // Generate time slots for current mode
   const timeSlots = generateTimeSlots(mode);
 
-  if (isLoading) {
+  if (isLoading || !storeConfig) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">

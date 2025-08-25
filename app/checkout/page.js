@@ -25,14 +25,30 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [formErrors, setFormErrors] = useState({});
+  const [storeConfig, setStoreConfig] = useState(null);
 
-  // Business configuration
-  const businessConfig = {
-    openingTime: '16:30',
-    closingTime: '22:00',
-    collectionTimeMinutes: 15,
-    deliveryTimeMinutes: 45,
-  };
+  // Load store configuration from database
+  useEffect(() => {
+    async function loadStoreConfig() {
+      try {
+        const res = await fetch(process.env.NEXT_PUBLIC_API_URL + '/api/store/config');
+        if (res.ok) {
+          const config = await res.json();
+          setStoreConfig(config);
+        }
+      } catch (e) {
+        console.error('Error loading store config:', e);
+        // Fallback to default config
+        setStoreConfig({
+          collection_lead_time_minutes: 15,
+          delivery_lead_time_minutes: 45,
+          collection_buffer_before_close_minutes: 15,
+          delivery_buffer_before_close_minutes: 15
+        });
+      }
+    }
+    loadStoreConfig();
+  }, []);
 
   // On mount, read cart from sessionStorage (passed from menu page)
   useEffect(() => {
