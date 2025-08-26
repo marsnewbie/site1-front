@@ -246,13 +246,32 @@ export default function CheckoutPage() {
       const data = await res.json();
       
       if (data.success) {
-        setMessage(`Order ${data.orderId} placed successfully! ${data.emailSent ? 'Confirmation email sent.' : ''}`);
+        // Store order data for success page
+        const orderData = {
+          orderId: data.orderId,
+          customerName: `${contact.firstName} ${contact.lastName || ''}`.trim(),
+          email: contact.email,
+          phone: contact.phone,
+          mode: mode,
+          total: subtotal + deliveryFee,
+          subtotal: subtotal,
+          deliveryFee: deliveryFee,
+          items: cartItems,
+          comment: notes,
+          address: mode === 'delivery' ? `${contact.address || ''} ${contact.street || ''} ${contact.city || ''}`.trim() : null
+        };
+        
+        sessionStorage.setItem('lastOrderData', JSON.stringify(orderData));
+        
         // Clear all order-related session storage
         sessionStorage.removeItem('cart');
         sessionStorage.removeItem('orderMode');
         sessionStorage.removeItem('postcode');
         sessionStorage.removeItem('deliveryInfo');
         setCartItems([]);
+        
+        // Redirect to success page
+        window.location.href = `/order-success?orderId=${data.orderId}`;
       } else {
         setMessage(data.error || 'Error placing order');
       }
@@ -497,6 +516,11 @@ export default function CheckoutPage() {
                         )}
                       </div>
                       {formErrors.postcode && <div className="text-red-500 text-sm mt-1">{formErrors.postcode}</div>}
+                      {mode === 'delivery' && (
+                        <div className="text-xs text-gray-500 mt-1">
+                          Please press "Check" button to verify the postcode before placing the order
+                        </div>
+                      )}
                       {mode === 'delivery' && quote && (
                         <div className={`text-sm mt-2 ${quote.isDeliverable ? 'text-green-600' : 'text-red-600'}`}>
                           {quote.isDeliverable
@@ -690,6 +714,11 @@ export default function CheckoutPage() {
                         )}
                       </div>
                       {formErrors.postcode && <div className="text-red-500 text-sm mt-1">{formErrors.postcode}</div>}
+                      {mode === 'delivery' && (
+                        <div className="text-xs text-gray-500 mt-1">
+                          Please press "Check" button to verify the postcode before placing the order
+                        </div>
+                      )}
                       {mode === 'delivery' && quote && (
                         <div className={`text-sm mt-2 ${quote.isDeliverable ? 'text-green-600' : 'text-red-600'}`}>
                           {quote.isDeliverable

@@ -144,13 +144,12 @@ export default function MenuPage() {
 
   // Generate time slots based on current time and store config
   const generateTimeSlots = (mode) => {
-    if (!storeConfig) return ['ASAP'];
+    if (!storeConfig || !openingHours) return ['ASAP'];
     
     // Use UK timezone for store operations
     const now = new Date();
     const ukTime = new Date(now.toLocaleString("en-US", {timeZone: "Europe/London"}));
     const currentTime = ukTime.getHours() * 60 + ukTime.getMinutes(); // Current time in minutes (UK time)
-    const currentDay = ukTime.getDay(); // 0 = Sunday, 1 = Monday, etc. (UK time)
     
     // Get preparation time based on mode
     const prepTime = mode === 'collection' 
@@ -161,20 +160,47 @@ export default function MenuPage() {
       ? storeConfig.collection_buffer_before_close_minutes
       : storeConfig.delivery_buffer_before_close_minutes;
     
-    // Define opening hours based on seed data
+    // Use opening hours from API response
     let openingPeriods = [];
     
-    if (currentDay >= 1 && currentDay <= 4 && currentDay !== 2) { // Mon, Wed, Thu (not Tue)
-      openingPeriods = [
-        { start: 12 * 60, end: 15 * 60 }, // Lunch: 12:00-15:00
-        { start: 17 * 60, end: 23 * 60 }  // Dinner: 17:00-23:00
-      ];
-    } else if (currentDay === 2) { // Tuesday - closed
-      return ['ASAP']; // Store closed, only show ASAP
-    } else if (currentDay === 0 || currentDay === 5 || currentDay === 6) { // Sun, Fri, Sat
-      openingPeriods = [
-        { start: 16 * 60, end: 24 * 60 } // 16:00-00:00 (24:00)
-      ];
+    if (openingHours.isOpen) {
+      // Store is open, use the provided hours
+      if (openingHours.hours && Array.isArray(openingHours.hours)) {
+        openingPeriods = openingHours.hours.map(period => {
+          const [openHour, openMin] = period.open_time.split(':').map(Number);
+          const [closeHour, closeMin] = period.close_time.split(':').map(Number);
+          
+          return {
+            start: openHour * 60 + openMin,
+            end: closeHour * 60 + closeMin
+          };
+        });
+      }
+    } else {
+      // Store is closed, but still show time slots for future orders
+      // For demonstration, let's show some example slots
+      const timeSlots = ['ASAP'];
+      
+      // Add some demo future time slots
+      for (let i = 1; i <= 8; i++) {
+        const futureTime = currentTime + (i * 30); // Every 30 minutes
+        let hours = Math.floor(futureTime / 60);
+        const minutes = futureTime % 60;
+        
+        // Handle next day
+        if (hours >= 24) {
+          hours = hours - 24;
+        }
+        
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        const displayHours = hours === 0 ? 12 : (hours > 12 ? hours - 12 : hours);
+        const displayMinutes = minutes.toString().padStart(2, '0');
+        const timeString = `${displayHours}:${displayMinutes} ${ampm}`;
+        
+        timeSlots.push(timeString);
+      }
+      
+      return timeSlots;
     }
     
     const timeSlots = ['ASAP'];
