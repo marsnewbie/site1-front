@@ -161,28 +161,92 @@ export default function CheckoutPage() {
       setMessage('Please agree to the terms and conditions');
       return;
     }
+
+    // Validate delivery postcode if needed
+    if (mode === 'delivery' && (!quote || !quote.isDeliverable)) {
+      setMessage('Please check delivery availability for your postcode.');
+      return;
+    }
     
     setSubmitting(true);
     setMessage('');
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://site1-backend-production.up.railway.app';
+      
+      // Prepare data based on account type
+      let requestBody = {
+        checkoutMethod: accountType === 'guest' ? 'guest' : accountType === 'returning' ? 'login' : 'register',
+        mode,
+        cartItems,
+        subtotalPence: subtotal,
+        deliveryFeePence: deliveryFee,
+        totalPence: subtotal + deliveryFee,
+        paymentMethod,
+        comment: notes,
+      };
+
+      // Add data based on checkout method
+      if (accountType === 'guest') {
+        requestBody.guestData = {
+          firstName: contact.firstName,
+          lastName: contact.lastName,
+          email: contact.email,
+          telephone: contact.phone,
+          postcode: contact.postcode,
+          address: contact.address,
+          streetName: contact.street,
+          city: contact.city
+        };
+      } else if (accountType === 'returning') {
+        // For returning customers, get the login credentials
+        const loginEmail = document.getElementById('login-email')?.value;
+        const loginPassword = document.getElementById('login-password')?.value;
+        
+        if (!loginEmail || !loginPassword) {
+          setMessage('Please enter your login credentials.');
+          setSubmitting(false);
+          return;
+        }
+        
+        requestBody.loginData = {
+          email: loginEmail,
+          password: loginPassword
+        };
+      } else if (accountType === 'new') {
+        // For new account registration
+        const password = document.getElementById('new-password')?.value;
+        const passwordConfirm = document.getElementById('new-password-confirm')?.value;
+        
+        if (!password || !passwordConfirm) {
+          setMessage('Please enter and confirm your password.');
+          setSubmitting(false);
+          return;
+        }
+        
+        requestBody.registerData = {
+          firstName: contact.firstName,
+          lastName: contact.lastName,
+          email: contact.email,
+          telephone: contact.phone,
+          password: password,
+          passwordConfirm: passwordConfirm,
+          postcode: contact.postcode,
+          address: contact.address,
+          streetName: contact.street,
+          city: contact.city
+        };
+      }
+
       const res = await fetch(apiUrl + '/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          mode,
-          contact,
-          cartItems,
-          subtotalPence: subtotal,
-          deliveryFeePence: deliveryFee,
-          totalPence: subtotal + deliveryFee,
-          paymentMethod,
-          notes,
-        }),
+        body: JSON.stringify(requestBody),
       });
+      
       const data = await res.json();
-      if (data.ok) {
-        setMessage(`Order ${data.orderId} placed successfully!`);
+      
+      if (data.success) {
+        setMessage(`Order ${data.orderId} placed successfully! ${data.emailSent ? 'Confirmation email sent.' : ''}`);
         // Clear all order-related session storage
         sessionStorage.removeItem('cart');
         sessionStorage.removeItem('orderMode');
@@ -190,11 +254,11 @@ export default function CheckoutPage() {
         sessionStorage.removeItem('deliveryInfo');
         setCartItems([]);
       } else {
-        setMessage('Error placing order');
+        setMessage(data.error || 'Error placing order');
       }
     } catch (e) {
-      console.error(e);
-      setMessage('Error placing order');
+      console.error('Checkout error:', e);
+      setMessage('Error placing order. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -407,15 +471,39 @@ export default function CheckoutPage() {
                       <label htmlFor="guest-postcode" className="block mb-2 font-semibold">
                         Post Code{mode === 'delivery' ? <span className="text-red-500">*</span> : ''}:
                       </label>
-                      <input 
-                        type="text" 
-                        id="guest-postcode" 
-                        value={contact.postcode}
-                        onChange={(e) => setContact({...contact, postcode: e.target.value})}
-                        className={`w-full p-2 border rounded ${formErrors.postcode ? 'border-red-500' : 'border-gray-300'}`}
-                        placeholder="Post Code"
-                      />
+                      <div className="flex space-x-2">
+                        <input 
+                          type="text" 
+                          id="guest-postcode" 
+                          value={contact.postcode}
+                          onChange={(e) => {
+                            setContact({...contact, postcode: e.target.value});
+                            // Clear previous quote when postcode changes
+                            if (mode === 'delivery') {
+                              setQuote(null);
+                            }
+                          }}
+                          className={`flex-1 p-2 border rounded ${formErrors.postcode ? 'border-red-500' : 'border-gray-300'}`}
+                          placeholder="Post Code"
+                        />
+                        {mode === 'delivery' && (
+                          <button 
+                            type="button"
+                            onClick={fetchQuote}
+                            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                          >
+                            Check
+                          </button>
+                        )}
+                      </div>
                       {formErrors.postcode && <div className="text-red-500 text-sm mt-1">{formErrors.postcode}</div>}
+                      {mode === 'delivery' && quote && (
+                        <div className={`text-sm mt-2 ${quote.isDeliverable ? 'text-green-600' : 'text-red-600'}`}>
+                          {quote.isDeliverable
+                            ? `Delivery fee £${(quote.feePence / 100).toFixed(2)}, minimum order £${(quote.minOrderPence / 100).toFixed(2)}`
+                            : `Not deliverable: ${quote.reason}`}
+                        </div>
+                      )}
                     </div>
                     <div className="form-group mb-4">
                       <label htmlFor="guest-address" className="block mb-2 font-semibold">Address:</label>
@@ -576,15 +664,39 @@ export default function CheckoutPage() {
                     <h5 className="font-bold mb-4">Your Address</h5>
                     <div className="form-group mb-4">
                       <label htmlFor="new-postcode" className="block mb-2 font-semibold">Post Code<span className="text-red-500">*</span></label>
-                      <input 
-                        type="text" 
-                        id="new-postcode" 
-                        value={contact.postcode}
-                        onChange={(e) => setContact({...contact, postcode: e.target.value})}
-                        className={`w-full p-2 border rounded ${formErrors.postcode ? 'border-red-500' : 'border-gray-300'}`}
-                        placeholder="Post Code"
-                      />
+                      <div className="flex space-x-2">
+                        <input 
+                          type="text" 
+                          id="new-postcode" 
+                          value={contact.postcode}
+                          onChange={(e) => {
+                            setContact({...contact, postcode: e.target.value});
+                            // Clear previous quote when postcode changes
+                            if (mode === 'delivery') {
+                              setQuote(null);
+                            }
+                          }}
+                          className={`flex-1 p-2 border rounded ${formErrors.postcode ? 'border-red-500' : 'border-gray-300'}`}
+                          placeholder="Post Code"
+                        />
+                        {mode === 'delivery' && (
+                          <button 
+                            type="button"
+                            onClick={fetchQuote}
+                            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                          >
+                            Check
+                          </button>
+                        )}
+                      </div>
                       {formErrors.postcode && <div className="text-red-500 text-sm mt-1">{formErrors.postcode}</div>}
+                      {mode === 'delivery' && quote && (
+                        <div className={`text-sm mt-2 ${quote.isDeliverable ? 'text-green-600' : 'text-red-600'}`}>
+                          {quote.isDeliverable
+                            ? `Delivery fee £${(quote.feePence / 100).toFixed(2)}, minimum order £${(quote.minOrderPence / 100).toFixed(2)}`
+                            : `Not deliverable: ${quote.reason}`}
+                        </div>
+                      )}
                     </div>
                     <div className="form-group mb-4">
                       <label htmlFor="new-address" className="block mb-2 font-semibold">Address</label>
