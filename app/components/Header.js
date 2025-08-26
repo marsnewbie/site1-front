@@ -54,7 +54,6 @@ export default function Header() {
           <nav className="hidden md:flex space-x-8">
             <Link href="/" className="text-gray-900 font-medium">Home</Link>
             <Link href="/menu" className="text-gray-700 hover:text-gray-900">Menu</Link>
-            <Link href="/feedback" className="text-gray-700 hover:text-gray-900">Feedback</Link>
             <Link href="/contact" className="text-gray-700 hover:text-gray-900">Contact Us</Link>
           </nav>
           
