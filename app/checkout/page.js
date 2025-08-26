@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import Header from '../components/Header';
 
 export default function CheckoutPage() {
   const [cartItems, setCartItems] = useState([]);
@@ -26,6 +27,7 @@ export default function CheckoutPage() {
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [formErrors, setFormErrors] = useState({});
   const [storeConfig, setStoreConfig] = useState(null);
+  const [requestedTime, setRequestedTime] = useState('ASAP');
 
   // Load store configuration from database
   useEffect(() => {
@@ -67,6 +69,8 @@ export default function CheckoutPage() {
     // Load saved postcode and delivery info from menu page
     const savedPostcode = sessionStorage.getItem('postcode');
     const savedDeliveryInfo = sessionStorage.getItem('deliveryInfo');
+    const savedRequestedTime = sessionStorage.getItem('requestedTime');
+    
     if (savedPostcode) {
       setContact(prev => ({ ...prev, postcode: savedPostcode }));
     }
@@ -77,6 +81,9 @@ export default function CheckoutPage() {
       } catch (e) {
         console.error('Error loading delivery info from sessionStorage:', e);
       }
+    }
+    if (savedRequestedTime) {
+      setRequestedTime(savedRequestedTime);
     }
   }, []);
 
@@ -101,7 +108,7 @@ export default function CheckoutPage() {
       // Additional required fields for delivery
       if (mode === 'delivery') {
         if (!contact.postcode.trim()) errors.postcode = 'Postcode is required for delivery';
-        if (!contact.street.trim()) errors.street = 'Street name is required for delivery';
+        if (!contact.address.trim()) errors.address = 'Address is required for delivery';
       }
     }
 
@@ -116,7 +123,7 @@ export default function CheckoutPage() {
       }
       if (!contact.phone.trim()) errors.phone = 'Phone number is required';
       if (!contact.postcode.trim()) errors.postcode = 'Postcode is required';
-      if (!contact.street.trim()) errors.street = 'Street name is required';
+      if (!contact.address.trim()) errors.address = 'Address is required';
     }
 
     setFormErrors(errors);
@@ -286,51 +293,7 @@ export default function CheckoutPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            {/* Social Icons */}
-            <div className="hidden md:flex items-center space-x-4">
-              <a href="#" className="text-gray-600 hover:text-gray-900">
-                <i className="fa fa-instagram text-xl"></i>
-              </a>
-              <a href="#" className="text-gray-600 hover:text-gray-900">
-                <i className="fa fa-facebook text-xl"></i>
-              </a>
-            </div>
-            
-            {/* Navigation Left */}
-            <nav className="hidden md:flex space-x-8">
-              <Link href="/" className="text-gray-900 font-medium">Home</Link>
-              <Link href="/menu" className="text-gray-700 hover:text-gray-900">Menu</Link>
-              <Link href="/feedback" className="text-gray-700 hover:text-gray-900">Feedback</Link>
-              <Link href="/contact" className="text-gray-700 hover:text-gray-900">Contact Us</Link>
-            </nav>
-            
-            {/* Logo */}
-            <div className="flex items-center">
-              <Image 
-                src="https://erzoxdbzmmhshpkscfln.supabase.co/storage/v1/object/public/media/logo/logo01.png"
-                alt="China Palace"
-                width={120}
-                height={40}
-                className="h-10 w-auto"
-              />
-            </div>
-            
-            {/* Navigation Right (blank for checkout) */}
-            <div className="hidden md:flex space-x-8"></div>
-            
-            {/* Login/Register */}
-            <div className="hidden md:flex items-center space-x-2">
-              <i className="fa fa-user-circle-o text-gray-600"></i>
-              <Link href="/login" className="text-gray-700 hover:text-gray-900">login</Link>
-              <span className="text-gray-600">or</span>
-              <Link href="/register" className="text-gray-700 hover:text-gray-900">Register</Link>
-            </div>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       {/* Checkout content */}
       <div className="container mx-auto py-8">
@@ -346,7 +309,9 @@ export default function CheckoutPage() {
                 </Link>
               </div>
               <div className="summary-body">
-                <p className="mb-4"><strong>Collection Time:</strong> 04:45 PM (Monday)</p>
+                <p className="mb-4">
+                  <strong>{mode === 'collection' ? 'Collection' : 'Delivery'} Time:</strong> {requestedTime}
+                </p>
                 <label htmlFor="notes" className="block mb-2 font-semibold">Notes</label>
                 <textarea 
                   id="notes" 
@@ -530,30 +495,21 @@ export default function CheckoutPage() {
                       )}
                     </div>
                     <div className="form-group mb-4">
-                      <label htmlFor="guest-address" className="block mb-2 font-semibold">Address:</label>
+                      <label htmlFor="guest-address" className="block mb-2 font-semibold">
+                        Address{mode === 'delivery' ? <span className="text-red-500">*</span> : ''}
+                        <span className="text-gray-500 text-sm font-normal"> (Detailed Street Name and House Number)</span>
+                      </label>
                       <input 
                         type="text" 
                         id="guest-address" 
                         value={contact.address}
                         onChange={(e) => setContact({...contact, address: e.target.value})}
-                        className="w-full p-2 border border-gray-300 rounded"
-                        placeholder="Address"
+                        className={`w-full p-2 border rounded ${formErrors.address ? 'border-red-500' : 'border-gray-300'}`}
+                        placeholder="e.g. 123 Main Street, Apartment 4B"
                       />
+                      {formErrors.address && <div className="text-red-500 text-sm mt-1">{formErrors.address}</div>}
                     </div>
-                    <div className="form-group mb-4">
-                      <label htmlFor="guest-street" className="block mb-2 font-semibold">
-                        Street Name{mode === 'delivery' ? <span className="text-red-500">*</span> : ''}:
-                      </label>
-                      <input 
-                        type="text" 
-                        id="guest-street" 
-                        value={contact.street}
-                        onChange={(e) => setContact({...contact, street: e.target.value})}
-                        className={`w-full p-2 border rounded ${formErrors.street ? 'border-red-500' : 'border-gray-300'}`}
-                        placeholder="Street Name"
-                      />
-                      {formErrors.street && <div className="text-red-500 text-sm mt-1">{formErrors.street}</div>}
-                    </div>
+                    {/* Street Name field hidden as it's now included in Address field */}
                     <div className="form-group mb-4">
                       <label htmlFor="guest-city" className="block mb-2 font-semibold">City:</label>
                       <input 
@@ -728,28 +684,21 @@ export default function CheckoutPage() {
                       )}
                     </div>
                     <div className="form-group mb-4">
-                      <label htmlFor="new-address" className="block mb-2 font-semibold">Address</label>
+                      <label htmlFor="new-address" className="block mb-2 font-semibold">
+                        Address<span className="text-red-500">*</span>
+                        <span className="text-gray-500 text-sm font-normal"> (Detailed Street Name and House Number)</span>
+                      </label>
                       <input 
                         type="text" 
                         id="new-address" 
                         value={contact.address}
                         onChange={(e) => setContact({...contact, address: e.target.value})}
-                        className="w-full p-2 border border-gray-300 rounded"
-                        placeholder="Address"
+                        className={`w-full p-2 border rounded ${formErrors.address ? 'border-red-500' : 'border-gray-300'}`}
+                        placeholder="e.g. 123 Main Street, Apartment 4B"
                       />
+                      {formErrors.address && <div className="text-red-500 text-sm mt-1">{formErrors.address}</div>}
                     </div>
-                    <div className="form-group mb-4">
-                      <label htmlFor="new-street" className="block mb-2 font-semibold">Street Name<span className="text-red-500">*</span></label>
-                      <input 
-                        type="text" 
-                        id="new-street" 
-                        value={contact.street}
-                        onChange={(e) => setContact({...contact, street: e.target.value})}
-                        className={`w-full p-2 border rounded ${formErrors.street ? 'border-red-500' : 'border-gray-300'}`}
-                        placeholder="Street Name"
-                      />
-                      {formErrors.street && <div className="text-red-500 text-sm mt-1">{formErrors.street}</div>}
-                    </div>
+                    {/* Street Name field hidden as it's now included in Address field */}
                     <div className="form-group mb-4">
                       <label htmlFor="new-address2" className="block mb-2 font-semibold">Address 2</label>
                       <input 

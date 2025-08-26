@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import Header from './components/Header';
 
 export default function HomePage() {
   const [isLoaded, setIsLoaded] = useState(false);
@@ -13,61 +14,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            {/* Social Icons */}
-            <div className="hidden md:flex items-center space-x-4">
-              <a href="#" className="text-gray-600 hover:text-gray-900">
-                <i className="fa fa-instagram text-xl"></i>
-              </a>
-              <a href="#" className="text-gray-600 hover:text-gray-900">
-                <i className="fa fa-facebook text-xl"></i>
-              </a>
-            </div>
-            
-            {/* Navigation Left */}
-            <nav className="hidden md:flex space-x-8">
-              <Link href="/" className="text-gray-900 font-medium">Home</Link>
-              <Link href="/menu" className="text-gray-700 hover:text-gray-900">Menu</Link>
-            </nav>
-            
-            {/* Logo */}
-            <div className="flex items-center">
-              <Image 
-                src="https://erzoxdbzmmhshpkscfln.supabase.co/storage/v1/object/public/media/logo/logo01.png"
-                alt="China Palace"
-                width={120}
-                height={40}
-                className="h-10 w-auto"
-              />
-            </div>
-            
-            {/* Navigation Right */}
-            <nav className="hidden md:flex space-x-8">
-              <Link href="/feedback" className="text-gray-700 hover:text-gray-900">Feedback</Link>
-              <Link href="/contact" className="text-gray-700 hover:text-gray-900">Contact Us</Link>
-            </nav>
-            
-            {/* Login/Register */}
-            <div className="hidden md:flex items-center space-x-2">
-              <i className="fa fa-user-circle-o text-gray-600"></i>
-              <Link href="/login" className="text-gray-700 hover:text-gray-900">login</Link>
-              <span className="text-gray-600">or</span>
-              <Link href="/register" className="text-gray-700 hover:text-gray-900">Register</Link>
-            </div>
-            
-            {/* Mobile Menu Button */}
-            <div className="md:hidden">
-              <button className="text-gray-700">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       {/* Hero Section with Banner */}
       <section className="relative">

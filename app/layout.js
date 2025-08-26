@@ -1,4 +1,5 @@
 import './globals.css';
+import { AuthProvider } from './contexts/AuthContext';
 
 export const metadata = {
   title: 'China Palace Takeaway Crowland | Chinese Food in Peterborough',
@@ -12,7 +13,9 @@ export default function RootLayout({ children }) {
         <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
       </head>
       <body>
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );
