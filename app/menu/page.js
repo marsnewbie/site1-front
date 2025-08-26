@@ -19,24 +19,27 @@ export default function MenuPage() {
   const [storeConfig, setStoreConfig] = useState(null);
   const [openingHours, setOpeningHours] = useState(null);
 
-  // Load store configuration from database
+  // Load all initial data in parallel for better performance
   useEffect(() => {
-    async function loadStoreConfig() {
+    async function loadInitialData() {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://site1-backend-production.up.railway.app';
+      console.log('Loading initial data from:', apiUrl);
+      
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://site1-backend-production.up.railway.app';
-        console.log('Loading store config from:', apiUrl + '/api/store/config');
+        // Load all three APIs in parallel
+        const [storeConfigRes, openingHoursRes, menuRes] = await Promise.all([
+          fetch(apiUrl + '/api/store/config'),
+          fetch(apiUrl + '/api/store/hours'),
+          fetch(apiUrl + '/api/menu')
+        ]);
         
-        const res = await fetch(apiUrl + '/api/store/config');
-        console.log('Store config API response status:', res.status);
-        
-        if (res.ok) {
-          const config = await res.json();
+        // Handle store config
+        if (storeConfigRes.ok) {
+          const config = await storeConfigRes.json();
           console.log('Store config loaded:', config);
           setStoreConfig(config);
         } else {
-          console.error('Store config API error:', res.status, res.statusText);
-          const errorText = await res.text();
-          console.error('Error response:', errorText);
+          console.error('Store config API error:', storeConfigRes.status, storeConfigRes.statusText);
           // Fallback to default config
           setStoreConfig({
             collection_lead_time_minutes: 15,
@@ -45,39 +48,45 @@ export default function MenuPage() {
             delivery_buffer_before_close_minutes: 15
           });
         }
+        
+        // Handle opening hours
+        if (openingHoursRes.ok) {
+          const hours = await openingHoursRes.json();
+          console.log('Opening hours loaded:', hours);
+          setOpeningHours(hours);
+        } else {
+          console.error('Opening hours API error:', openingHoursRes.status, openingHoursRes.statusText);
+        }
+        
+        // Handle menu data
+        if (menuRes.ok) {
+          const menuData = await menuRes.json();
+          console.log('Menu data loaded:', menuData);
+          setData(menuData);
+          if (menuData.categories.length > 0) {
+            setActiveCategory(menuData.categories[0].id);
+          }
+        } else {
+          console.error('Menu API error:', menuRes.status, menuRes.statusText);
+          const errorText = await menuRes.text();
+          console.error('Error response:', errorText);
+        }
+        
       } catch (e) {
-        console.error('Error loading store config:', e);
-        // Fallback to default config
+        console.error('Error loading initial data:', e);
+        // Set fallback config if everything fails
         setStoreConfig({
           collection_lead_time_minutes: 15,
           delivery_lead_time_minutes: 45,
           collection_buffer_before_close_minutes: 15,
           delivery_buffer_before_close_minutes: 15
         });
+      } finally {
+        setIsLoading(false);
       }
     }
-    loadStoreConfig();
-  }, []);
-
-  // Load opening hours for today
-  useEffect(() => {
-    async function loadOpeningHours() {
-      try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://site1-backend-production.up.railway.app';
-        const res = await fetch(apiUrl + '/api/store/hours');
-        
-        if (res.ok) {
-          const hours = await res.json();
-          console.log('Opening hours loaded:', hours);
-          setOpeningHours(hours);
-        } else {
-          console.error('Opening hours API error:', res.status, res.statusText);
-        }
-      } catch (e) {
-        console.error('Error loading opening hours:', e);
-      }
-    }
-    loadOpeningHours();
+    
+    loadInitialData();
   }, []);
 
   // Load cart from sessionStorage on component mount
@@ -516,36 +525,7 @@ export default function MenuPage() {
     return () => document.head.removeChild(style);
   }, []);
 
-  useEffect(() => {
-    async function load() {
-      try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://site1-backend-production.up.railway.app';
-        console.log('Loading menu data from:', apiUrl + '/api/menu');
-        
-        const res = await fetch(apiUrl + '/api/menu');
-        console.log('Menu API response status:', res.status);
-        
-        if (res.ok) {
-          const d = await res.json();
-          console.log('Menu data loaded:', d);
-          // Backend already returns the correct format, no need for transformation
-          setData(d);
-          if (d.categories.length > 0) {
-            setActiveCategory(d.categories[0].id);
-          }
-        } else {
-          console.error('Menu API error:', res.status, res.statusText);
-          const errorText = await res.text();
-          console.error('Error response:', errorText);
-        }
-      } catch (e) {
-        console.error('Error loading menu data:', e);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    load();
-  }, []);
+  // Note: Menu loading is now handled in the parallel loadInitialData function above
 
   // Update time slots when mode changes or store config loads
   useEffect(() => {
@@ -755,10 +735,69 @@ export default function MenuPage() {
 
   if (isLoading || !storeConfig) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading menu...</p>
+      <div className="min-h-screen bg-gray-50">
+        {/* Header Placeholder */}
+        <div className="bg-white shadow-sm border-b">
+          <div className="container mx-auto py-4 px-4">
+            <div className="h-8 bg-gray-200 rounded animate-pulse w-48"></div>
+          </div>
+        </div>
+        
+        <div className="container mx-auto py-8">
+          <div className="row flex">
+            {/* Left Sidebar Skeleton */}
+            <div className="col-md-3">
+              <div className="space-y-2">
+                {[1,2,3,4,5].map((i) => (
+                  <div key={i} className="h-12 bg-red-200 rounded animate-pulse"></div>
+                ))}
+              </div>
+            </div>
+            
+            {/* Center Content Skeleton */}
+            <div className="col-md-6">
+              <div className="h-12 bg-red-200 rounded animate-pulse mb-4"></div>
+              <div className="space-y-4">
+                {[1,2,3,4,5,6].map((i) => (
+                  <div key={i} className="flex justify-between items-center p-4 bg-white rounded border">
+                    <div className="flex-1">
+                      <div className="h-5 bg-gray-200 rounded animate-pulse mb-2 w-3/4"></div>
+                      <div className="h-3 bg-gray-100 rounded animate-pulse w-1/2"></div>
+                    </div>
+                    <div className="h-6 bg-gray-200 rounded animate-pulse w-16 mr-4"></div>
+                    <div className="h-8 w-8 bg-red-200 rounded animate-pulse"></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            {/* Right Sidebar Skeleton */}
+            <div className="col-md-3">
+              <div className="bg-gray-50 p-4 rounded border">
+                <div className="h-8 bg-red-200 rounded animate-pulse mb-4"></div>
+                <div className="space-y-3">
+                  <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="h-10 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="h-10 bg-gray-200 rounded animate-pulse"></div>
+                </div>
+                <div className="mt-6">
+                  <div className="text-center py-8">
+                    <div className="text-4xl mb-2">🛒</div>
+                    <div className="h-4 bg-gray-200 rounded animate-pulse mx-auto w-32"></div>
+                  </div>
+                </div>
+                <div className="h-12 bg-gray-200 rounded animate-pulse mt-4"></div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Loading Message */}
+          <div className="text-center mt-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto mb-2"></div>
+            <p className="text-gray-600 text-sm">Loading delicious menu... Please wait</p>
+          </div>
         </div>
       </div>
     );

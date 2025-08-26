@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import Header from '../components/Header';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function CheckoutPage() {
   const [cartItems, setCartItems] = useState([]);
@@ -28,6 +29,10 @@ export default function CheckoutPage() {
   const [formErrors, setFormErrors] = useState({});
   const [storeConfig, setStoreConfig] = useState(null);
   const [requestedTime, setRequestedTime] = useState('ASAP');
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const { user, isAuthenticated, login } = useAuth();
 
   // Load store configuration from database
   useEffect(() => {
@@ -86,6 +91,77 @@ export default function CheckoutPage() {
       setRequestedTime(savedRequestedTime);
     }
   }, []);
+
+  // Handle login for returning customers
+  const handleLogin = async () => {
+    if (!loginEmail || !loginPassword) {
+      setMessage('Please enter your email and password.');
+      return;
+    }
+
+    setIsLoggingIn(true);
+    setMessage('');
+    
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://site1-backend-production.up.railway.app';
+      const res = await fetch(apiUrl + '/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          email: loginEmail, 
+          password: loginPassword 
+        }),
+      });
+      
+      const data = await res.json();
+      
+      if (data.success) {
+        // Use AuthContext to save login state
+        login(data.user, data.token);
+        
+        // Pre-fill form with user data
+        setContact(prev => ({
+          ...prev,
+          firstName: data.user.firstName || '',
+          lastName: data.user.lastName || '',
+          email: data.user.email || '',
+          phone: data.user.telephone || '',
+          postcode: data.user.postcode || '',
+          address: data.user.address || '',
+          city: data.user.city || ''
+        }));
+        
+        setMessage('Login successful! Your information has been loaded.');
+        
+        // Clear login form
+        setLoginEmail('');
+        setLoginPassword('');
+      } else {
+        setMessage(data.error || 'Login failed. Please check your credentials.');
+      }
+    } catch (e) {
+      console.error('Login error:', e);
+      setMessage('Login failed. Please try again.');
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
+
+  // Auto-fill form when user logs in from context (e.g., from other pages)
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      setContact(prev => ({
+        ...prev,
+        firstName: user.firstName || prev.firstName,
+        lastName: user.lastName || prev.lastName,
+        email: user.email || prev.email,
+        phone: user.telephone || prev.phone,
+        postcode: user.postcode || prev.postcode,
+        address: user.address || prev.address,
+        city: user.city || prev.city
+      }));
+    }
+  }, [isAuthenticated, user]);
 
   const subtotal = cartItems.reduce((sum, it) => sum + it.price * it.qty, 0);
   const deliveryFee = quote?.feePence || 0;
@@ -205,20 +281,22 @@ export default function CheckoutPage() {
           city: contact.city
         };
       } else if (accountType === 'returning') {
-        // For returning customers, get the login credentials
-        const loginEmail = document.getElementById('login-email')?.value;
-        const loginPassword = document.getElementById('login-password')?.value;
-        
-        if (!loginEmail || !loginPassword) {
-          setMessage('Please enter your login credentials.');
+        // For returning customers, use stored auth token
+        if (!isAuthenticated) {
+          setMessage('Please log in first.');
           setSubmitting(false);
           return;
         }
         
-        requestBody.loginData = {
-          email: loginEmail,
-          password: loginPassword
-        };
+        // Include auth token in request
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+          setMessage('Authentication token not found. Please log in again.');
+          setSubmitting(false);
+          return;
+        }
+        
+        requestBody.authToken = token;
       } else if (accountType === 'new') {
         // For new account registration
         const password = document.getElementById('new-password')?.value;
@@ -244,9 +322,16 @@ export default function CheckoutPage() {
         };
       }
 
+      const headers = { 'Content-Type': 'application/json' };
+      
+      // Add auth token if user is logged in
+      if (isAuthenticated && localStorage.getItem('authToken')) {
+        headers['Authorization'] = `Bearer ${localStorage.getItem('authToken')}`;
+      }
+      
       const res = await fetch(apiUrl + '/api/checkout', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify(requestBody),
       });
       
@@ -535,25 +620,59 @@ export default function CheckoutPage() {
                   </summary>
                   <div className="panel-body p-4 bg-white border-t border-gray-300">
                     <h5 className="font-bold mb-4">Returning Customer</h5>
-                    <div className="form-group mb-4">
-                      <label htmlFor="login-email" className="block mb-2 font-semibold">E‑Mail:</label>
-                      <input 
-                        type="email" 
-                        id="login-email" 
-                        className="w-full p-2 border border-gray-300 rounded"
-                        placeholder="Email"
-                      />
-                    </div>
-                    <div className="form-group mb-4">
-                      <label htmlFor="login-password" className="block mb-2 font-semibold">Password:</label>
-                      <input 
-                        type="password" 
-                        id="login-password" 
-                        className="w-full p-2 border border-gray-300 rounded"
-                        placeholder="Password"
-                      />
-                    </div>
-                    <button className="btn bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">Login</button>
+                    {isAuthenticated ? (
+                      /* Show logged in user info */
+                      <div className="bg-green-50 border border-green-200 rounded p-4">
+                        <div className="flex items-center mb-3">
+                          <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-bold mr-3">
+                            ✓
+                          </div>
+                          <div>
+                            <div className="font-bold text-green-800">Welcome back!</div>
+                            <div className="text-green-600 text-sm">{user?.email}</div>
+                          </div>
+                        </div>
+                        <div className="text-sm text-gray-700">
+                          <div><strong>Name:</strong> {user?.firstName} {user?.lastName}</div>
+                          {user?.telephone && <div><strong>Phone:</strong> {user?.telephone}</div>}
+                          {user?.address && <div><strong>Address:</strong> {user?.address}</div>}
+                          {user?.postcode && <div><strong>Postcode:</strong> {user?.postcode}</div>}
+                        </div>
+                      </div>
+                    ) : (
+                      /* Show login form */
+                      <div>
+                        <div className="form-group mb-4">
+                          <label htmlFor="login-email" className="block mb-2 font-semibold">E‑Mail:</label>
+                          <input 
+                            type="email" 
+                            id="login-email" 
+                            value={loginEmail}
+                            onChange={(e) => setLoginEmail(e.target.value)}
+                            className="w-full p-2 border border-gray-300 rounded"
+                            placeholder="Email"
+                          />
+                        </div>
+                        <div className="form-group mb-4">
+                          <label htmlFor="login-password" className="block mb-2 font-semibold">Password:</label>
+                          <input 
+                            type="password" 
+                            id="login-password" 
+                            value={loginPassword}
+                            onChange={(e) => setLoginPassword(e.target.value)}
+                            className="w-full p-2 border border-gray-300 rounded"
+                            placeholder="Password"
+                          />
+                        </div>
+                        <button 
+                          className="btn bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                          onClick={handleLogin}
+                          disabled={isLoggingIn || !loginEmail || !loginPassword}
+                        >
+                          {isLoggingIn ? 'Logging in...' : 'Login'}
+                        </button>
+                      </div>
+                    )}
                     <div className="form-group mt-4">
                       <Link href="/forgot-password" className="text-red-600 hover:text-red-800">Forgotten Password</Link><br/>
                       <label className="flex items-center mt-2">
