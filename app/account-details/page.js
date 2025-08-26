@@ -12,14 +12,23 @@ export default function AccountDetailsPage() {
     firstName: '',
     lastName: '',
     email: '',
-    phone: '',
+    telephone: '',
     postcode: '',
     address: ''
   });
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
   const [formErrors, setFormErrors] = useState({});
+  const [passwordErrors, setPasswordErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPasswordSubmitting, setIsPasswordSubmitting] = useState(false);
   const [message, setMessage] = useState('');
+  const [passwordMessage, setPasswordMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [showPasswordChange, setShowPasswordChange] = useState(false);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -55,7 +64,7 @@ export default function AccountDetailsPage() {
           firstName: data.user.firstName || data.user.first_name || '',
           lastName: data.user.lastName || data.user.last_name || '',
           email: data.user.email || '',
-          phone: data.user.phone || '',
+          telephone: data.user.telephone || '',
           postcode: data.user.postcode || '',
           address: data.user.address || ''
         });
@@ -65,7 +74,7 @@ export default function AccountDetailsPage() {
           firstName: user.firstName || user.first_name || '',
           lastName: user.lastName || user.last_name || '',
           email: user.email || '',
-          phone: user.phone || '',
+          telephone: user.telephone || '',
           postcode: user.postcode || '',
           address: user.address || ''
         });
@@ -95,8 +104,8 @@ export default function AccountDetailsPage() {
       errors.email = 'Please enter a valid email address';
     }
     
-    if (!profileData.phone.trim()) {
-      errors.phone = 'Phone number is required';
+    if (!profileData.telephone.trim()) {
+      errors.telephone = 'Phone number is required';
     }
     
     if (!profileData.postcode.trim()) {
@@ -104,6 +113,29 @@ export default function AccountDetailsPage() {
     }
     
     setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const validatePasswordForm = () => {
+    const errors = {};
+    
+    if (!passwordData.currentPassword.trim()) {
+      errors.currentPassword = 'Current password is required';
+    }
+    
+    if (!passwordData.newPassword.trim()) {
+      errors.newPassword = 'New password is required';
+    } else if (passwordData.newPassword.length < 6) {
+      errors.newPassword = 'Password must be at least 6 characters';
+    }
+    
+    if (!passwordData.confirmPassword.trim()) {
+      errors.confirmPassword = 'Please confirm your new password';
+    } else if (passwordData.newPassword !== passwordData.confirmPassword) {
+      errors.confirmPassword = 'Passwords do not match';
+    }
+    
+    setPasswordErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
@@ -148,12 +180,68 @@ export default function AccountDetailsPage() {
     }
   };
 
+  const handlePasswordSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!validatePasswordForm()) {
+      return;
+    }
+    
+    setIsPasswordSubmitting(true);
+    setPasswordMessage('');
+    
+    try {
+      const token = localStorage.getItem('authToken');
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://site1-backend-production.up.railway.app';
+      
+      const res = await fetch(apiUrl + '/api/auth/change-password', {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          currentPassword: passwordData.currentPassword,
+          newPassword: passwordData.newPassword
+        }),
+      });
+      
+      const data = await res.json();
+      
+      if (data.success) {
+        setPasswordMessage('Password changed successfully!');
+        setPasswordData({
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: ''
+        });
+        setShowPasswordChange(false);
+      } else {
+        setPasswordMessage(data.error || 'Failed to change password. Please try again.');
+      }
+    } catch (error) {
+      console.error('Change password error:', error);
+      setPasswordMessage('Network error. Please try again.');
+    } finally {
+      setIsPasswordSubmitting(false);
+    }
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setProfileData(prev => ({ ...prev, [name]: value }));
     // Clear error when user starts typing
     if (formErrors[name]) {
       setFormErrors(prev => ({ ...prev, [name]: '' }));
+    }
+  };
+
+  const handlePasswordInputChange = (e) => {
+    const { name, value } = e.target;
+    setPasswordData(prev => ({ ...prev, [name]: value }));
+    // Clear error when user starts typing
+    if (passwordErrors[name]) {
+      setPasswordErrors(prev => ({ ...prev, [name]: '' }));
     }
   };
 
@@ -251,21 +339,21 @@ export default function AccountDetailsPage() {
               </div>
               
               <div>
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="telephone" className="block text-sm font-medium text-gray-700 mb-2">
                   Phone Number *
                 </label>
                 <input
                   type="tel"
-                  id="phone"
-                  name="phone"
-                  value={profileData.phone}
+                  id="telephone"
+                  name="telephone"
+                  value={profileData.telephone}
                   onChange={handleInputChange}
                   className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 ${
-                    formErrors.phone ? 'border-red-500' : 'border-gray-300'
+                    formErrors.telephone ? 'border-red-500' : 'border-gray-300'
                   }`}
                   placeholder="Enter your phone number"
                 />
-                {formErrors.phone && <p className="text-red-500 text-sm mt-1">{formErrors.phone}</p>}
+                {formErrors.telephone && <p className="text-red-500 text-sm mt-1">{formErrors.telephone}</p>}
               </div>
               
               <div>
@@ -319,6 +407,95 @@ export default function AccountDetailsPage() {
                 {message}
               </div>
             )}
+            
+            {/* Change Password Section */}
+            <div className="mt-8 border-t pt-8">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-medium text-gray-900">Change Password</h3>
+                <button
+                  onClick={() => setShowPasswordChange(!showPasswordChange)}
+                  className="text-red-600 hover:text-red-700 text-sm font-medium"
+                >
+                  {showPasswordChange ? 'Cancel' : 'Change Password'}
+                </button>
+              </div>
+              
+              {showPasswordChange && (
+                <form onSubmit={handlePasswordSubmit} className="space-y-4">
+                  <div>
+                    <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                      Current Password *
+                    </label>
+                    <input
+                      type="password"
+                      id="currentPassword"
+                      name="currentPassword"
+                      value={passwordData.currentPassword}
+                      onChange={handlePasswordInputChange}
+                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 ${
+                        passwordErrors.currentPassword ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                      placeholder="Enter your current password"
+                    />
+                    {passwordErrors.currentPassword && <p className="text-red-500 text-sm mt-1">{passwordErrors.currentPassword}</p>}
+                  </div>
+                  
+                  <div>
+                    <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                      New Password *
+                    </label>
+                    <input
+                      type="password"
+                      id="newPassword"
+                      name="newPassword"
+                      value={passwordData.newPassword}
+                      onChange={handlePasswordInputChange}
+                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 ${
+                        passwordErrors.newPassword ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                      placeholder="Enter your new password"
+                    />
+                    {passwordErrors.newPassword && <p className="text-red-500 text-sm mt-1">{passwordErrors.newPassword}</p>}
+                  </div>
+                  
+                  <div>
+                    <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                      Confirm New Password *
+                    </label>
+                    <input
+                      type="password"
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      value={passwordData.confirmPassword}
+                      onChange={handlePasswordInputChange}
+                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 ${
+                        passwordErrors.confirmPassword ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                      placeholder="Confirm your new password"
+                    />
+                    {passwordErrors.confirmPassword && <p className="text-red-500 text-sm mt-1">{passwordErrors.confirmPassword}</p>}
+                  </div>
+                  
+                  <button
+                    type="submit"
+                    disabled={isPasswordSubmitting}
+                    className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {isPasswordSubmitting ? 'Changing...' : 'Change Password'}
+                  </button>
+                </form>
+              )}
+              
+              {passwordMessage && (
+                <div className={`mt-4 p-3 rounded-md text-sm ${
+                  passwordMessage.includes('successfully') 
+                    ? 'bg-green-100 text-green-800' 
+                    : 'bg-red-100 text-red-800'
+                }`}>
+                  {passwordMessage}
+                </div>
+              )}
+            </div>
             
             <div className="mt-6 text-center">
               <Link href="/" className="text-gray-600 hover:text-gray-700 text-sm">
