@@ -1,10 +1,10 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
 
-export default function OrderSuccessPage() {
+function OrderSuccessContent() {
   const [orderData, setOrderData] = useState(null);
   const searchParams = useSearchParams();
   const orderId = searchParams.get('orderId');
@@ -280,5 +280,20 @@ export default function OrderSuccessPage() {
         </div>
       </footer>
     </div>
+  );
+}
+
+export default function OrderSuccessPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading order details...</p>
+        </div>
+      </div>
+    }>
+      <OrderSuccessContent />
+    </Suspense>
   );
 }
