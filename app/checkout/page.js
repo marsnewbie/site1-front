@@ -375,7 +375,21 @@ export default function CheckoutPage() {
     // Validate delivery postcode if needed
     const quote = getCurrentQuote();
     if (mode === 'delivery' && (!quote || !quote.isDeliverable)) {
-      setMessage('Please check delivery availability for your postcode.');
+      if (!quote) {
+        // User hasn't checked postcode yet
+        setMessage('Please verify your postcode first by clicking the "Check" button next to your postcode field.');
+        // Scroll to postcode field to help user find it
+        setTimeout(() => {
+          const postcodeField = document.querySelector(`#${accountType}-postcode`);
+          if (postcodeField) {
+            postcodeField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            postcodeField.focus();
+          }
+        }, 100);
+      } else {
+        // User has checked but postcode is not deliverable
+        setMessage(`Delivery not available to ${getCurrentContact().postcode}: ${quote.reason}. Please try a different postcode or choose collection.`);
+      }
       return;
     }
     
@@ -1136,7 +1150,7 @@ export default function CheckoutPage() {
 
             <button 
               className="place-order-btn w-full bg-red-600 text-white p-3 rounded font-bold text-lg disabled:bg-gray-300 disabled:cursor-not-allowed"
-              disabled={isSubmitting || cartItems.length === 0 || !agreeTerms || (mode === 'delivery' && (!currentQuote || !currentQuote.isDeliverable))}
+              disabled={isSubmitting || cartItems.length === 0 || !agreeTerms}
               onClick={submitOrder}
             >
               {isSubmitting ? 'Processing...' : `Place ${mode === 'collection' ? 'Collection' : 'Delivery'} Order`}
