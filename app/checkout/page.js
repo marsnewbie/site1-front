@@ -32,7 +32,31 @@ export default function CheckoutPage() {
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
-  const { user, isAuthenticated, login } = useAuth();
+  const { user, isAuthenticated, login, logout } = useAuth();
+  
+  // Separate state for each checkout option
+  const [guestContact, setGuestContact] = useState({ 
+    firstName: '', lastName: '', email: '', phone: '', postcode: '',
+    address: '', street: '', address2: '', city: ''
+  });
+  const [returningContact, setReturningContact] = useState({ 
+    firstName: '', lastName: '', email: '', phone: '', postcode: '',
+    address: '', street: '', address2: '', city: ''
+  });
+  const [newContact, setNewContact] = useState({ 
+    firstName: '', lastName: '', email: '', phone: '', postcode: '',
+    address: '', street: '', address2: '', city: ''
+  });
+  
+  // Separate postcode validation for each option
+  const [guestQuote, setGuestQuote] = useState(null);
+  const [returningQuote, setReturningQuote] = useState(null);
+  const [newQuote, setNewQuote] = useState(null);
+  
+  // Separate form errors for each option
+  const [guestFormErrors, setGuestFormErrors] = useState({});
+  const [returningFormErrors, setReturningFormErrors] = useState({});
+  const [newFormErrors, setNewFormErrors] = useState({});
 
   // Load store configuration from database
   useEffect(() => {
@@ -119,17 +143,23 @@ export default function CheckoutPage() {
         // Use AuthContext to save login state
         login(data.user, data.token);
         
-        // Pre-fill form with user data
-        setContact(prev => ({
-          ...prev,
+        // Pre-fill returning customer form with user data
+        setReturningContact({
           firstName: data.user.firstName || '',
           lastName: data.user.lastName || '',
           email: data.user.email || '',
           phone: data.user.telephone || '',
           postcode: data.user.postcode || '',
           address: data.user.address || '',
+          street: data.user.street_name || '',
+          address2: data.user.address2 || '',
           city: data.user.city || ''
-        }));
+        });
+        
+        // If delivery mode and user has postcode, trigger quote check
+        if (mode === 'delivery' && data.user.postcode) {
+          fetchQuoteForType('returning', data.user.postcode, subtotal);
+        }
         
         setMessage('Login successful! Your information has been loaded.');
         
@@ -147,31 +177,103 @@ export default function CheckoutPage() {
     }
   };
 
-  // Auto-fill form when user logs in from context (e.g., from other pages)
+  // Set default account type and auto-fill based on authentication status
   useEffect(() => {
     if (isAuthenticated && user) {
-      setContact(prev => ({
-        ...prev,
-        firstName: user.firstName || prev.firstName,
-        lastName: user.lastName || prev.lastName,
-        email: user.email || prev.email,
-        phone: user.telephone || prev.phone,
-        postcode: user.postcode || prev.postcode,
-        address: user.address || prev.address,
-        city: user.city || prev.city
-      }));
+      // Logged in users default to 'returning' account type
+      setAccountType('returning');
+      
+      // Auto-fill returning customer form with user data
+      setReturningContact({
+        firstName: user.firstName || '',
+        lastName: user.lastName || '', 
+        email: user.email || '',
+        phone: user.telephone || '',
+        postcode: user.postcode || '',
+        address: user.address || '',
+        street: user.street_name || '',
+        address2: user.address2 || '',
+        city: user.city || ''
+      });
+    } else {
+      // Not logged in users default to 'guest'
+      setAccountType('guest');
     }
   }, [isAuthenticated, user]);
 
-  const subtotal = cartItems.reduce((sum, it) => sum + it.price * it.qty, 0);
-  const deliveryFee = quote?.feePence || 0;
-  const minOrder = quote?.minOrderPence || 0;
+  // Helper functions to get current form data
+  const getCurrentContact = () => {
+    switch (accountType) {
+      case 'guest': return guestContact;
+      case 'returning': return returningContact;
+      case 'new': return newContact;
+      default: return guestContact;
+    }
+  };
+  
+  const setCurrentContact = (updater) => {
+    switch (accountType) {
+      case 'guest': setGuestContact(updater); break;
+      case 'returning': setReturningContact(updater); break;
+      case 'new': setNewContact(updater); break;
+    }
+  };
+  
+  const getCurrentQuote = () => {
+    switch (accountType) {
+      case 'guest': return guestQuote;
+      case 'returning': return returningQuote;
+      case 'new': return newQuote;
+      default: return guestQuote;
+    }
+  };
+  
+  const setCurrentQuote = (quote) => {
+    switch (accountType) {
+      case 'guest': setGuestQuote(quote); break;
+      case 'returning': setReturningQuote(quote); break;
+      case 'new': setNewQuote(quote); break;
+    }
+  };
+  
+  const getCurrentFormErrors = () => {
+    switch (accountType) {
+      case 'guest': return guestFormErrors;
+      case 'returning': return returningFormErrors;
+      case 'new': return newFormErrors;
+      default: return guestFormErrors;
+    }
+  };
+  
+  const setCurrentFormErrors = (errors) => {
+    switch (accountType) {
+      case 'guest': setGuestFormErrors(errors); break;
+      case 'returning': setReturningFormErrors(errors); break;
+      case 'new': setNewFormErrors(errors); break;
+    }
+  };
+  
+  // Handle account type change with logout protection
+  const handleAccountTypeChange = (newType) => {
+    if (isAuthenticated && (newType === 'guest' || newType === 'new')) {
+      setMessage('请先退出登录才能选择其他结账方式。');
+      return;
+    }
+    setAccountType(newType);
+    setMessage(''); // Clear any previous messages
+  };
 
-  // Validate form fields
+  const subtotal = cartItems.reduce((sum, it) => sum + it.price * it.qty, 0);
+  const currentQuote = getCurrentQuote();
+  const deliveryFee = currentQuote?.feePence || 0;
+  const minOrder = currentQuote?.minOrderPence || 0;
+
+  // Validate form fields for current account type
   const validateForm = () => {
     const errors = {};
+    const contact = getCurrentContact();
 
-    // Required fields for all users (guest checkout)
+    // Required fields for guest checkout
     if (accountType === 'guest') {
       if (!contact.firstName.trim()) errors.firstName = 'First name is required';
       if (!contact.email.trim()) {
@@ -182,6 +284,15 @@ export default function CheckoutPage() {
       if (!contact.phone.trim()) errors.phone = 'Phone number is required';
 
       // Additional required fields for delivery
+      if (mode === 'delivery') {
+        if (!contact.postcode.trim()) errors.postcode = 'Postcode is required for delivery';
+        if (!contact.address.trim()) errors.address = 'Address is required for delivery';
+      }
+    }
+
+    // Returning customers (already logged in) - no validation needed for basic info
+    if (accountType === 'returning') {
+      // Only validate delivery-specific fields if in delivery mode
       if (mode === 'delivery') {
         if (!contact.postcode.trim()) errors.postcode = 'Postcode is required for delivery';
         if (!contact.address.trim()) errors.address = 'Address is required for delivery';
@@ -202,12 +313,13 @@ export default function CheckoutPage() {
       if (!contact.address.trim()) errors.address = 'Address is required';
     }
 
-    setFormErrors(errors);
+    setCurrentFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
-  async function fetchQuote() {
-    if (!contact.postcode) {
+  // Updated fetchQuote for specific account type
+  async function fetchQuoteForType(type, postcode, subtotalAmount) {
+    if (!postcode) {
       alert('Please enter postcode');
       return;
     }
@@ -219,19 +331,37 @@ export default function CheckoutPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           mode: 'delivery', 
-          postcode: contact.postcode, 
-          subtotalPence: subtotal 
+          postcode: postcode, 
+          subtotalPence: subtotalAmount 
         }),
       });
       const data = await res.json();
-      setQuote(data);
+      
+      // Set quote for specific account type
+      switch (type) {
+        case 'guest': setGuestQuote(data); break;
+        case 'returning': setReturningQuote(data); break;
+        case 'new': setNewQuote(data); break;
+      }
     } catch (e) {
       console.error(e);
-      setQuote({
+      const errorQuote = {
         isDeliverable: false,
         reason: 'Error checking delivery availability. Please try again.'
-      });
+      };
+      
+      switch (type) {
+        case 'guest': setGuestQuote(errorQuote); break;
+        case 'returning': setReturningQuote(errorQuote); break;
+        case 'new': setNewQuote(errorQuote); break;
+      }
     }
+  }
+  
+  // Convenience function for current account type
+  function fetchQuote() {
+    const contact = getCurrentContact();
+    fetchQuoteForType(accountType, contact.postcode, subtotal);
   }
 
   async function submitOrder() {
@@ -246,6 +376,7 @@ export default function CheckoutPage() {
     }
 
     // Validate delivery postcode if needed
+    const quote = getCurrentQuote();
     if (mode === 'delivery' && (!quote || !quote.isDeliverable)) {
       setMessage('Please check delivery availability for your postcode.');
       return;
@@ -256,9 +387,11 @@ export default function CheckoutPage() {
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://site1-backend-production.up.railway.app';
       
+      // Get current form data
+      const contact = getCurrentContact();
+      
       // Prepare data based on account type
       let requestBody = {
-        checkoutMethod: accountType === 'guest' ? 'guest' : accountType === 'returning' ? 'login' : 'register',
         mode,
         cartItems,
         subtotalPence: subtotal,
@@ -270,6 +403,7 @@ export default function CheckoutPage() {
 
       // Add data based on checkout method
       if (accountType === 'guest') {
+        requestBody.checkoutMethod = 'guest';
         requestBody.guestData = {
           firstName: contact.firstName,
           lastName: contact.lastName,
@@ -281,22 +415,12 @@ export default function CheckoutPage() {
           city: contact.city
         };
       } else if (accountType === 'returning') {
-        // For returning customers, use stored auth token
+        // For returning customers, we don't need checkoutMethod since backend will use req.user
         if (!isAuthenticated) {
           setMessage('Please log in first.');
           setSubmitting(false);
           return;
         }
-        
-        // Include auth token in request
-        const token = localStorage.getItem('authToken');
-        if (!token) {
-          setMessage('Authentication token not found. Please log in again.');
-          setSubmitting(false);
-          return;
-        }
-        
-        requestBody.authToken = token;
       } else if (accountType === 'new') {
         // For new account registration
         const password = document.getElementById('new-password')?.value;
@@ -308,6 +432,7 @@ export default function CheckoutPage() {
           return;
         }
         
+        requestBody.checkoutMethod = 'register';
         requestBody.registerData = {
           firstName: contact.firstName,
           lastName: contact.lastName,
@@ -339,6 +464,7 @@ export default function CheckoutPage() {
       
       if (data.success) {
         // Store order data for success page
+        const contact = getCurrentContact();
         const orderData = {
           orderId: data.orderId,
           customerName: `${contact.firstName} ${contact.lastName || ''}`.trim(),
@@ -480,7 +606,7 @@ export default function CheckoutPage() {
                 <details className="border border-gray-300 rounded mb-4" open={accountType === 'guest'}>
                   <summary 
                     className="bg-red-600 text-white p-3 cursor-pointer font-bold rounded"
-                    onClick={() => setAccountType('guest')}
+                    onClick={() => handleAccountTypeChange('guest')}
                   >
                     Checkout As A Guest
                   </summary>
@@ -493,48 +619,48 @@ export default function CheckoutPage() {
                       <input 
                         type="text" 
                         id="guest-first-name" 
-                        value={contact.firstName}
-                        onChange={(e) => setContact({...contact, firstName: e.target.value})}
-                        className={`w-full p-2 border rounded ${formErrors.firstName ? 'border-red-500' : 'border-gray-300'}`}
+                        value={guestContact.firstName}
+                        onChange={(e) => setGuestContact({...guestContact, firstName: e.target.value})}
+                        className={`w-full p-2 border rounded ${guestFormErrors.firstName ? 'border-red-500' : 'border-gray-300'}`}
                         placeholder="First Name"
                       />
-                      {formErrors.firstName && <div className="text-red-500 text-sm mt-1">{formErrors.firstName}</div>}
+                      {guestFormErrors.firstName && <div className="text-red-500 text-sm mt-1">{guestFormErrors.firstName}</div>}
                     </div>
                     <div className="form-group mb-4">
                       <label htmlFor="guest-last-name" className="block mb-2 font-semibold">Last Name</label>
                       <input 
                         type="text" 
                         id="guest-last-name" 
-                        value={contact.lastName}
-                        onChange={(e) => setContact({...contact, lastName: e.target.value})}
-                        className={`w-full p-2 border rounded ${formErrors.lastName ? 'border-red-500' : 'border-gray-300'}`}
+                        value={guestContact.lastName}
+                        onChange={(e) => setGuestContact({...guestContact, lastName: e.target.value})}
+                        className={`w-full p-2 border rounded ${guestFormErrors.lastName ? 'border-red-500' : 'border-gray-300'}`}
                         placeholder="Last Name"
                       />
-                      {formErrors.lastName && <div className="text-red-500 text-sm mt-1">{formErrors.lastName}</div>}
+                      {guestFormErrors.lastName && <div className="text-red-500 text-sm mt-1">{guestFormErrors.lastName}</div>}
                     </div>
                     <div className="form-group mb-4">
                       <label htmlFor="guest-email" className="block mb-2 font-semibold">*E‑Mail</label>
                       <input 
                         type="email" 
                         id="guest-email" 
-                        value={contact.email}
-                        onChange={(e) => setContact({...contact, email: e.target.value})}
-                        className={`w-full p-2 border rounded ${formErrors.email ? 'border-red-500' : 'border-gray-300'}`}
+                        value={guestContact.email}
+                        onChange={(e) => setGuestContact({...guestContact, email: e.target.value})}
+                        className={`w-full p-2 border rounded ${guestFormErrors.email ? 'border-red-500' : 'border-gray-300'}`}
                         placeholder="Email"
                       />
-                      {formErrors.email && <div className="text-red-500 text-sm mt-1">{formErrors.email}</div>}
+                      {guestFormErrors.email && <div className="text-red-500 text-sm mt-1">{guestFormErrors.email}</div>}
                     </div>
                     <div className="form-group mb-4">
                       <label htmlFor="guest-phone" className="block mb-2 font-semibold">*Telephone</label>
                       <input 
                         type="text" 
                         id="guest-phone" 
-                        value={contact.phone}
-                        onChange={(e) => setContact({...contact, phone: e.target.value})}
-                        className={`w-full p-2 border rounded ${formErrors.phone ? 'border-red-500' : 'border-gray-300'}`}
+                        value={guestContact.phone}
+                        onChange={(e) => setGuestContact({...guestContact, phone: e.target.value})}
+                        className={`w-full p-2 border rounded ${guestFormErrors.phone ? 'border-red-500' : 'border-gray-300'}`}
                         placeholder="Telephone"
                       />
-                      {formErrors.phone && <div className="text-red-500 text-sm mt-1">{formErrors.phone}</div>}
+                      {guestFormErrors.phone && <div className="text-red-500 text-sm mt-1">{guestFormErrors.phone}</div>}
                     </div>
                     <div className="form-group mb-4">
                       <label htmlFor="guest-postcode" className="block mb-2 font-semibold">
@@ -544,15 +670,15 @@ export default function CheckoutPage() {
                         <input 
                           type="text" 
                           id="guest-postcode" 
-                          value={contact.postcode}
+                          value={guestContact.postcode}
                           onChange={(e) => {
-                            setContact({...contact, postcode: e.target.value});
+                            setGuestContact({...guestContact, postcode: e.target.value});
                             // Clear previous quote when postcode changes
                             if (mode === 'delivery') {
-                              setQuote(null);
+                              setGuestQuote(null);
                             }
                           }}
-                          className={`flex-1 p-2 border rounded ${formErrors.postcode ? 'border-red-500' : 'border-gray-300'}`}
+                          className={`flex-1 p-2 border rounded ${guestFormErrors.postcode ? 'border-red-500' : 'border-gray-300'}`}
                           placeholder="Post Code"
                         />
                         {mode === 'delivery' && (
@@ -587,9 +713,9 @@ export default function CheckoutPage() {
                       <input 
                         type="text" 
                         id="guest-address" 
-                        value={contact.address}
-                        onChange={(e) => setContact({...contact, address: e.target.value})}
-                        className={`w-full p-2 border rounded ${formErrors.address ? 'border-red-500' : 'border-gray-300'}`}
+                        value={guestContact.address}
+                        onChange={(e) => setGuestContact({...guestContact, address: e.target.value})}
+                        className={`w-full p-2 border rounded ${guestFormErrors.address ? 'border-red-500' : 'border-gray-300'}`}
                         placeholder="e.g. 123 Main Street, Apartment 4B"
                       />
                       {formErrors.address && <div className="text-red-500 text-sm mt-1">{formErrors.address}</div>}
@@ -600,8 +726,8 @@ export default function CheckoutPage() {
                       <input 
                         type="text" 
                         id="guest-city" 
-                        value={contact.city}
-                        onChange={(e) => setContact({...contact, city: e.target.value})}
+                        value={guestContact.city}
+                        onChange={(e) => setGuestContact({...guestContact, city: e.target.value})}
                         className="w-full p-2 border border-gray-300 rounded"
                         placeholder="City"
                       />
@@ -614,7 +740,7 @@ export default function CheckoutPage() {
                 <details className="border border-gray-300 rounded mb-4" open={accountType === 'returning'}>
                   <summary 
                     className="bg-red-600 text-white p-3 cursor-pointer font-bold rounded"
-                    onClick={() => setAccountType('returning')}
+                    onClick={() => handleAccountTypeChange('returning')}
                   >
                     I'm Already A Customer
                   </summary>
@@ -687,7 +813,7 @@ export default function CheckoutPage() {
                 <details className="border border-gray-300 rounded" open={accountType === 'new'}>
                   <summary 
                     className="bg-red-600 text-white p-3 cursor-pointer font-bold rounded"
-                    onClick={() => setAccountType('new')}
+                    onClick={() => handleAccountTypeChange('new')}
                   >
                     I'm New Here (I Want To Register An Account)
                   </summary>
