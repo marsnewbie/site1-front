@@ -20,7 +20,7 @@ export default function CheckoutPage() {
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
-  const { user, isAuthenticated, login, logout } = useAuth();
+  const { user, isAuthenticated, login, logout, loading } = useAuth();
   
   // Separate state for each checkout option
   const [guestContact, setGuestContact] = useState({ 
@@ -70,7 +70,7 @@ export default function CheckoutPage() {
     loadStoreConfig();
   }, []);
 
-  // On mount, read cart and order details from sessionStorage (passed from menu page)
+  // Load cart and basic settings on mount (these don't depend on auth)
   useEffect(() => {
     const stored = sessionStorage.getItem('cart');
     if (stored) {
@@ -83,35 +83,40 @@ export default function CheckoutPage() {
       setMode(savedMode);
     }
 
-    // Load saved postcode and delivery info from menu page
-    const savedPostcode = sessionStorage.getItem('postcode');
-    const savedDeliveryInfo = sessionStorage.getItem('deliveryInfo');
     const savedRequestedTime = sessionStorage.getItem('requestedTime');
-    
-    // Apply saved data to default account type form
-    if (savedPostcode) {
-      if (isAuthenticated) {
-        setReturningContact(prev => ({ ...prev, postcode: savedPostcode }));
-      } else {
-        setGuestContact(prev => ({ ...prev, postcode: savedPostcode }));
-      }
-    }
-    if (savedDeliveryInfo) {
-      try {
-        const deliveryInfo = JSON.parse(savedDeliveryInfo);
-        if (isAuthenticated) {
-          setReturningQuote(deliveryInfo);
-        } else {
-          setGuestQuote(deliveryInfo);
-        }
-      } catch (e) {
-        console.error('Error loading delivery info from sessionStorage:', e);
-      }
-    }
     if (savedRequestedTime) {
       setRequestedTime(savedRequestedTime);
     }
   }, []);
+
+  // Load auth-dependent data only after AuthContext loading is complete
+  useEffect(() => {
+    if (!loading) {
+      const savedPostcode = sessionStorage.getItem('postcode');
+      const savedDeliveryInfo = sessionStorage.getItem('deliveryInfo');
+      
+      // Apply saved data to correct account type form
+      if (savedPostcode) {
+        if (isAuthenticated) {
+          setReturningContact(prev => ({ ...prev, postcode: savedPostcode }));
+        } else {
+          setGuestContact(prev => ({ ...prev, postcode: savedPostcode }));
+        }
+      }
+      if (savedDeliveryInfo) {
+        try {
+          const deliveryInfo = JSON.parse(savedDeliveryInfo);
+          if (isAuthenticated) {
+            setReturningQuote(deliveryInfo);
+          } else {
+            setGuestQuote(deliveryInfo);
+          }
+        } catch (e) {
+          console.error('Error loading delivery info from sessionStorage:', e);
+        }
+      }
+    }
+  }, [loading, isAuthenticated]);
 
   // Handle login for returning customers
   const handleLogin = async () => {
@@ -176,27 +181,30 @@ export default function CheckoutPage() {
 
   // Set default account type and auto-fill based on authentication status
   useEffect(() => {
-    if (isAuthenticated && user) {
-      // Logged in users default to 'returning' account type
-      setAccountType('returning');
-      
-      // Auto-fill returning customer form with user data
-      setReturningContact({
-        firstName: user.firstName || '',
-        lastName: user.lastName || '', 
-        email: user.email || '',
-        phone: user.telephone || '',
-        postcode: user.postcode || '',
-        address: user.address || '',
-        street: user.street_name || '',
-        address2: user.address2 || '',
-        city: user.city || ''
-      });
-    } else {
-      // Not logged in users default to 'guest'
-      setAccountType('guest');
+    // Only set account type after AuthContext loading is complete
+    if (!loading) {
+      if (isAuthenticated && user) {
+        // Logged in users default to 'returning' account type
+        setAccountType('returning');
+        
+        // Auto-fill returning customer form with user data
+        setReturningContact({
+          firstName: user.firstName || '',
+          lastName: user.lastName || '', 
+          email: user.email || '',
+          phone: user.telephone || '',
+          postcode: user.postcode || '',
+          address: user.address || '',
+          street: user.street_name || '',
+          address2: user.address2 || '',
+          city: user.city || ''
+        });
+      } else {
+        // Not logged in users default to 'guest'
+        setAccountType('guest');
+      }
     }
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated, user, loading]);
 
   // Helper functions to get current form data
   const getCurrentContact = () => {
@@ -1148,12 +1156,17 @@ export default function CheckoutPage() {
               </label>
             </div>
 
+            {/* Debug info - remove after testing */}
+            <div className="text-xs text-gray-500 mb-2">
+              Debug: loading={loading.toString()}, isSubmitting={isSubmitting.toString()}, cartItems={cartItems.length}, agreeTerms={agreeTerms.toString()}, accountType={accountType}
+            </div>
+
             <button 
               className="place-order-btn w-full bg-red-600 text-white p-3 rounded font-bold text-lg disabled:bg-gray-300 disabled:cursor-not-allowed"
-              disabled={isSubmitting || cartItems.length === 0 || !agreeTerms}
+              disabled={loading || isSubmitting || cartItems.length === 0 || !agreeTerms}
               onClick={submitOrder}
             >
-              {isSubmitting ? 'Processing...' : `Place ${mode === 'collection' ? 'Collection' : 'Delivery'} Order`}
+              {loading ? 'Loading...' : isSubmitting ? 'Processing...' : `Place ${mode === 'collection' ? 'Collection' : 'Delivery'} Order`}
             </button>
 
             {message && (
