@@ -1140,8 +1140,12 @@ export default function CheckoutPage() {
               </label>
             </div>
 
-            <div className="alert alert-warning text-sm text-yellow-800 mb-4 p-3 bg-yellow-50 rounded">
-              Please watch out for order confirmation email from us. In case you don't receive an order confirmation email please call us to confirm the order. Please make sure you check your SPAM or junk folder in your inbox.
+            <div className="alert alert-info text-sm text-blue-800 mb-4 p-3 bg-blue-50 rounded border-l-4 border-blue-400">
+              <div className="font-semibold mb-1">Before placing your order, please ensure:</div>
+              <div>✓ You have agreed to the Terms & Conditions below</div>
+              {mode === 'delivery' && (
+                <div>✓ Click the 'Check' button next to your postcode to verify delivery availability</div>
+              )}
             </div>
 
             <div className="terms-section mb-4">
