@@ -26,11 +26,20 @@ export default function MenuPage() {
       console.log('Loading initial data from:', apiUrl);
       
       try {
-        // Load all three APIs in parallel
+        // Load all three APIs in parallel with aggressive caching
         const [storeConfigRes, openingHoursRes, menuRes] = await Promise.all([
-          fetch(apiUrl + '/api/store/config'),
-          fetch(apiUrl + '/api/store/hours'),
-          fetch(apiUrl + '/api/menu')
+          fetch(apiUrl + '/api/store/config', {
+            cache: 'force-cache', // 行业标准：强缓存静态数据
+            next: { revalidate: 300 } // 5分钟缓存
+          }),
+          fetch(apiUrl + '/api/store/hours', {
+            cache: 'force-cache',
+            next: { revalidate: 300 } // 5分钟缓存  
+          }),
+          fetch(apiUrl + '/api/menu', {
+            cache: 'force-cache',
+            next: { revalidate: 600 } // 10分钟缓存菜单数据
+          })
         ]);
         
         // Handle store config

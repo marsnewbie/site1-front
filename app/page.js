@@ -9,6 +9,35 @@ export default function HomePage() {
 
   useEffect(() => {
     setIsLoaded(true);
+    
+    // 行业标准：Prefetch menu page data when user lands on homepage
+    // 这样用户点击菜单时数据已经在缓存中了
+    const prefetchMenuData = async () => {
+      try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://site1-backend-production.up.railway.app';
+        
+        // Prefetch in background, don't wait for completion
+        Promise.all([
+          fetch(`${apiUrl}/api/store/config`, { 
+            cache: 'force-cache',
+            next: { revalidate: 300 } 
+          }),
+          fetch(`${apiUrl}/api/store/hours`, { 
+            cache: 'force-cache',
+            next: { revalidate: 300 } 
+          }),
+          fetch(`${apiUrl}/api/menu`, { 
+            cache: 'force-cache',
+            next: { revalidate: 600 } 
+          })
+        ]).catch(() => {}); // Silent fail, not critical
+      } catch (error) {
+        // Silent fail - this is just prefetching for performance
+      }
+    };
+    
+    // Start prefetching after 2 seconds, when user is likely still on homepage
+    setTimeout(prefetchMenuData, 2000);
   }, []);
 
   return (
