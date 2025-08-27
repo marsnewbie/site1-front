@@ -8,25 +8,13 @@ import { useAuth } from '../contexts/AuthContext';
 export default function CheckoutPage() {
   const [cartItems, setCartItems] = useState([]);
   const [mode, setMode] = useState('collection');
-  const [contact, setContact] = useState({ 
-    firstName: '', 
-    lastName: '', 
-    email: '', 
-    phone: '',
-    postcode: '',
-    address: '',
-    street: '',
-    address2: '',
-    city: ''
-  });
-  const [quote, setQuote] = useState(null);
+  // Note: contact, quote, formErrors removed - now using separate states for each account type
   const [message, setMessage] = useState('');
   const [isSubmitting, setSubmitting] = useState(false);
   const [notes, setNotes] = useState('');
   const [accountType, setAccountType] = useState('guest');
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [agreeTerms, setAgreeTerms] = useState(false);
-  const [formErrors, setFormErrors] = useState({});
   const [storeConfig, setStoreConfig] = useState(null);
   const [requestedTime, setRequestedTime] = useState('ASAP');
   const [loginEmail, setLoginEmail] = useState('');
@@ -100,13 +88,22 @@ export default function CheckoutPage() {
     const savedDeliveryInfo = sessionStorage.getItem('deliveryInfo');
     const savedRequestedTime = sessionStorage.getItem('requestedTime');
     
+    // Apply saved data to default account type form
     if (savedPostcode) {
-      setContact(prev => ({ ...prev, postcode: savedPostcode }));
+      if (isAuthenticated) {
+        setReturningContact(prev => ({ ...prev, postcode: savedPostcode }));
+      } else {
+        setGuestContact(prev => ({ ...prev, postcode: savedPostcode }));
+      }
     }
     if (savedDeliveryInfo) {
       try {
         const deliveryInfo = JSON.parse(savedDeliveryInfo);
-        setQuote(deliveryInfo);
+        if (isAuthenticated) {
+          setReturningQuote(deliveryInfo);
+        } else {
+          setGuestQuote(deliveryInfo);
+        }
       } catch (e) {
         console.error('Error loading delivery info from sessionStorage:', e);
       }
@@ -691,7 +688,7 @@ export default function CheckoutPage() {
                           </button>
                         )}
                       </div>
-                      {formErrors.postcode && <div className="text-red-500 text-sm mt-1">{formErrors.postcode}</div>}
+                      {newFormErrors.postcode && <div className="text-red-500 text-sm mt-1">{newFormErrors.postcode}</div>}
                       {mode === 'delivery' && (
                         <div className="text-xs text-gray-500 mt-1">
                           Please press "Check" button to verify the postcode before placing the order
@@ -718,7 +715,7 @@ export default function CheckoutPage() {
                         className={`w-full p-2 border rounded ${guestFormErrors.address ? 'border-red-500' : 'border-gray-300'}`}
                         placeholder="e.g. 123 Main Street, Apartment 4B"
                       />
-                      {formErrors.address && <div className="text-red-500 text-sm mt-1">{formErrors.address}</div>}
+                      {newFormErrors.address && <div className="text-red-500 text-sm mt-1">{newFormErrors.address}</div>}
                     </div>
                     {/* Street Name field hidden as it's now included in Address field */}
                     <div className="form-group mb-4">
@@ -747,22 +744,127 @@ export default function CheckoutPage() {
                   <div className="panel-body p-4 bg-white border-t border-gray-300">
                     <h5 className="font-bold mb-4">Returning Customer</h5>
                     {isAuthenticated ? (
-                      /* Show logged in user info */
-                      <div className="bg-green-50 border border-green-200 rounded p-4">
-                        <div className="flex items-center mb-3">
-                          <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-bold mr-3">
-                            ✓
-                          </div>
-                          <div>
-                            <div className="font-bold text-green-800">Welcome back!</div>
-                            <div className="text-green-600 text-sm">{user?.email}</div>
-                          </div>
+                      /* Show returning customer form - same design as guest */
+                      <div>
+                        <div className="alert alert-success text-sm text-green-800 mb-4 p-3 bg-green-50 rounded border border-green-200">
+                          ✓ Welcome back, {user?.firstName}! Please review your information below.
                         </div>
-                        <div className="text-sm text-gray-700">
-                          <div><strong>Name:</strong> {user?.firstName} {user?.lastName}</div>
-                          {user?.telephone && <div><strong>Phone:</strong> {user?.telephone}</div>}
-                          {user?.address && <div><strong>Address:</strong> {user?.address}</div>}
-                          {user?.postcode && <div><strong>Postcode:</strong> {user?.postcode}</div>}
+                        <div className="form-group mb-4">
+                          <label htmlFor="returning-first-name" className="block mb-2 font-semibold">*First Name</label>
+                          <input 
+                            type="text" 
+                            id="returning-first-name" 
+                            value={returningContact.firstName}
+                            onChange={(e) => setReturningContact({...returningContact, firstName: e.target.value})}
+                            className={`w-full p-2 border rounded ${returningFormErrors.firstName ? 'border-red-500' : 'border-gray-300'}`}
+                            placeholder="First Name"
+                          />
+                          {returningFormErrors.firstName && <div className="text-red-500 text-sm mt-1">{returningFormErrors.firstName}</div>}
+                        </div>
+                        <div className="form-group mb-4">
+                          <label htmlFor="returning-last-name" className="block mb-2 font-semibold">Last Name</label>
+                          <input 
+                            type="text" 
+                            id="returning-last-name" 
+                            value={returningContact.lastName}
+                            onChange={(e) => setReturningContact({...returningContact, lastName: e.target.value})}
+                            className={`w-full p-2 border rounded ${returningFormErrors.lastName ? 'border-red-500' : 'border-gray-300'}`}
+                            placeholder="Last Name"
+                          />
+                          {returningFormErrors.lastName && <div className="text-red-500 text-sm mt-1">{returningFormErrors.lastName}</div>}
+                        </div>
+                        <div className="form-group mb-4">
+                          <label htmlFor="returning-email" className="block mb-2 font-semibold">*E‑Mail</label>
+                          <input 
+                            type="email" 
+                            id="returning-email" 
+                            value={returningContact.email}
+                            onChange={(e) => setReturningContact({...returningContact, email: e.target.value})}
+                            className={`w-full p-2 border rounded ${returningFormErrors.email ? 'border-red-500' : 'border-gray-300'}`}
+                            placeholder="Email"
+                          />
+                          {returningFormErrors.email && <div className="text-red-500 text-sm mt-1">{returningFormErrors.email}</div>}
+                        </div>
+                        <div className="form-group mb-4">
+                          <label htmlFor="returning-phone" className="block mb-2 font-semibold">*Telephone</label>
+                          <input 
+                            type="text" 
+                            id="returning-phone" 
+                            value={returningContact.phone}
+                            onChange={(e) => setReturningContact({...returningContact, phone: e.target.value})}
+                            className={`w-full p-2 border rounded ${returningFormErrors.phone ? 'border-red-500' : 'border-gray-300'}`}
+                            placeholder="Telephone"
+                          />
+                          {returningFormErrors.phone && <div className="text-red-500 text-sm mt-1">{returningFormErrors.phone}</div>}
+                        </div>
+                        <div className="form-group mb-4">
+                          <label htmlFor="returning-postcode" className="block mb-2 font-semibold">
+                            Post Code{mode === 'delivery' ? <span className="text-red-500">*</span> : ''}:
+                          </label>
+                          <div className="flex space-x-2">
+                            <input 
+                              type="text" 
+                              id="returning-postcode" 
+                              value={returningContact.postcode}
+                              onChange={(e) => {
+                                setReturningContact({...returningContact, postcode: e.target.value});
+                                // Clear previous quote when postcode changes
+                                if (mode === 'delivery') {
+                                  setReturningQuote(null);
+                                }
+                              }}
+                              className={`flex-1 p-2 border rounded ${returningFormErrors.postcode ? 'border-red-500' : 'border-gray-300'}`}
+                              placeholder="Post Code"
+                            />
+                            {mode === 'delivery' && (
+                              <button 
+                                type="button"
+                                onClick={() => fetchQuoteForType('returning', returningContact.postcode, subtotal)}
+                                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                              >
+                                Check
+                              </button>
+                            )}
+                          </div>
+                          {returningFormErrors.postcode && <div className="text-red-500 text-sm mt-1">{returningFormErrors.postcode}</div>}
+                          {mode === 'delivery' && (
+                            <div className="text-xs text-gray-500 mt-1">
+                              Please press "Check" button to verify the postcode before placing the order
+                            </div>
+                          )}
+                          {mode === 'delivery' && returningQuote && (
+                            <div className={`text-sm mt-2 ${returningQuote.isDeliverable ? 'text-green-600' : 'text-red-600'}`}>
+                              {returningQuote.isDeliverable
+                                ? `Delivery fee £${(returningQuote.feePence / 100).toFixed(2)}, minimum order £${(returningQuote.minOrderPence / 100).toFixed(2)}`
+                                : `Not deliverable: ${returningQuote.reason}`}
+                            </div>
+                          )}
+                        </div>
+                        <div className="form-group mb-4">
+                          <label htmlFor="returning-address" className="block mb-2 font-semibold">
+                            Address{mode === 'delivery' ? <span className="text-red-500">*</span> : ''}
+                            <span className="text-gray-500 text-sm font-normal"> (Detailed Street Name and House Number)</span>
+                          </label>
+                          <input 
+                            type="text" 
+                            id="returning-address" 
+                            value={returningContact.address}
+                            onChange={(e) => setReturningContact({...returningContact, address: e.target.value})}
+                            className={`w-full p-2 border rounded ${returningFormErrors.address ? 'border-red-500' : 'border-gray-300'}`}
+                            placeholder="e.g. 123 Main Street, Apartment 4B"
+                          />
+                          {returningFormErrors.address && <div className="text-red-500 text-sm mt-1">{returningFormErrors.address}</div>}
+                        </div>
+                        <div className="form-group mb-4">
+                          <label htmlFor="returning-city" className="block mb-2 font-semibold">City:</label>
+                          <input 
+                            type="text" 
+                            id="returning-city" 
+                            value={returningContact.city}
+                            onChange={(e) => setReturningContact({...returningContact, city: e.target.value})}
+                            className="w-full p-2 border border-gray-300 rounded"
+                            placeholder="City"
+                          />
                         </div>
                       </div>
                     ) : (
@@ -824,48 +926,48 @@ export default function CheckoutPage() {
                       <input 
                         type="text" 
                         id="new-first-name" 
-                        value={contact.firstName}
-                        onChange={(e) => setContact({...contact, firstName: e.target.value})}
-                        className={`w-full p-2 border rounded ${formErrors.firstName ? 'border-red-500' : 'border-gray-300'}`}
+                        value={newContact.firstName}
+                        onChange={(e) => setNewContact({...newContact, firstName: e.target.value})}
+                        className={`w-full p-2 border rounded ${newFormErrors.firstName ? 'border-red-500' : 'border-gray-300'}`}
                         placeholder="First Name"
                       />
-                      {formErrors.firstName && <div className="text-red-500 text-sm mt-1">{formErrors.firstName}</div>}
+                      {newFormErrors.firstName && <div className="text-red-500 text-sm mt-1">{newFormErrors.firstName}</div>}
                     </div>
                     <div className="form-group mb-4">
                       <label htmlFor="new-last-name" className="block mb-2 font-semibold">Last Name<span className="text-red-500">*</span></label>
                       <input 
                         type="text" 
                         id="new-last-name" 
-                        value={contact.lastName}
-                        onChange={(e) => setContact({...contact, lastName: e.target.value})}
-                        className={`w-full p-2 border rounded ${formErrors.lastName ? 'border-red-500' : 'border-gray-300'}`}
+                        value={newContact.lastName}
+                        onChange={(e) => setNewContact({...newContact, lastName: e.target.value})}
+                        className={`w-full p-2 border rounded ${newFormErrors.lastName ? 'border-red-500' : 'border-gray-300'}`}
                         placeholder="Last Name"
                       />
-                      {formErrors.lastName && <div className="text-red-500 text-sm mt-1">{formErrors.lastName}</div>}
+                      {newFormErrors.lastName && <div className="text-red-500 text-sm mt-1">{newFormErrors.lastName}</div>}
                     </div>
                     <div className="form-group mb-4">
                       <label htmlFor="new-email" className="block mb-2 font-semibold">E‑Mail<span className="text-red-500">*</span></label>
                       <input 
                         type="email" 
                         id="new-email" 
-                        value={contact.email}
-                        onChange={(e) => setContact({...contact, email: e.target.value})}
-                        className={`w-full p-2 border rounded ${formErrors.email ? 'border-red-500' : 'border-gray-300'}`}
+                        value={newContact.email}
+                        onChange={(e) => setNewContact({...newContact, email: e.target.value})}
+                        className={`w-full p-2 border rounded ${newFormErrors.email ? 'border-red-500' : 'border-gray-300'}`}
                         placeholder="Email"
                       />
-                      {formErrors.email && <div className="text-red-500 text-sm mt-1">{formErrors.email}</div>}
+                      {newFormErrors.email && <div className="text-red-500 text-sm mt-1">{newFormErrors.email}</div>}
                     </div>
                     <div className="form-group mb-4">
                       <label htmlFor="new-phone" className="block mb-2 font-semibold">Telephone<span className="text-red-500">*</span></label>
                       <input 
                         type="text" 
                         id="new-phone" 
-                        value={contact.phone}
-                        onChange={(e) => setContact({...contact, phone: e.target.value})}
-                        className={`w-full p-2 border rounded ${formErrors.phone ? 'border-red-500' : 'border-gray-300'}`}
+                        value={newContact.phone}
+                        onChange={(e) => setNewContact({...newContact, phone: e.target.value})}
+                        className={`w-full p-2 border rounded ${newFormErrors.phone ? 'border-red-500' : 'border-gray-300'}`}
                         placeholder="Telephone"
                       />
-                      {formErrors.phone && <div className="text-red-500 text-sm mt-1">{formErrors.phone}</div>}
+                      {newFormErrors.phone && <div className="text-red-500 text-sm mt-1">{newFormErrors.phone}</div>}
                     </div>
                     <h5 className="font-bold mb-4">Your Password</h5>
                     <div className="form-group mb-4">
@@ -893,28 +995,28 @@ export default function CheckoutPage() {
                         <input 
                           type="text" 
                           id="new-postcode" 
-                          value={contact.postcode}
+                          value={newContact.postcode}
                           onChange={(e) => {
-                            setContact({...contact, postcode: e.target.value});
+                            setNewContact({...newContact, postcode: e.target.value});
                             // Clear previous quote when postcode changes
                             if (mode === 'delivery') {
-                              setQuote(null);
+                              setNewQuote(null);
                             }
                           }}
-                          className={`flex-1 p-2 border rounded ${formErrors.postcode ? 'border-red-500' : 'border-gray-300'}`}
+                          className={`flex-1 p-2 border rounded ${newFormErrors.postcode ? 'border-red-500' : 'border-gray-300'}`}
                           placeholder="Post Code"
                         />
                         {mode === 'delivery' && (
                           <button 
                             type="button"
-                            onClick={fetchQuote}
+                            onClick={() => fetchQuoteForType('new', newContact.postcode, subtotal)}
                             className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
                           >
                             Check
                           </button>
                         )}
                       </div>
-                      {formErrors.postcode && <div className="text-red-500 text-sm mt-1">{formErrors.postcode}</div>}
+                      {newFormErrors.postcode && <div className="text-red-500 text-sm mt-1">{newFormErrors.postcode}</div>}
                       {mode === 'delivery' && (
                         <div className="text-xs text-gray-500 mt-1">
                           Please press "Check" button to verify the postcode before placing the order
@@ -936,12 +1038,12 @@ export default function CheckoutPage() {
                       <input 
                         type="text" 
                         id="new-address" 
-                        value={contact.address}
-                        onChange={(e) => setContact({...contact, address: e.target.value})}
-                        className={`w-full p-2 border rounded ${formErrors.address ? 'border-red-500' : 'border-gray-300'}`}
+                        value={newContact.address}
+                        onChange={(e) => setNewContact({...newContact, address: e.target.value})}
+                        className={`w-full p-2 border rounded ${newFormErrors.address ? 'border-red-500' : 'border-gray-300'}`}
                         placeholder="e.g. 123 Main Street, Apartment 4B"
                       />
-                      {formErrors.address && <div className="text-red-500 text-sm mt-1">{formErrors.address}</div>}
+                      {newFormErrors.address && <div className="text-red-500 text-sm mt-1">{newFormErrors.address}</div>}
                     </div>
                     {/* Street Name field hidden as it's now included in Address field */}
                     <div className="form-group mb-4">
@@ -949,8 +1051,8 @@ export default function CheckoutPage() {
                       <input 
                         type="text" 
                         id="new-address2" 
-                        value={contact.address2}
-                        onChange={(e) => setContact({...contact, address2: e.target.value})}
+                        value={newContact.address2}
+                        onChange={(e) => setNewContact({...newContact, address2: e.target.value})}
                         className="w-full p-2 border border-gray-300 rounded"
                         placeholder="Address 2"
                       />
@@ -960,8 +1062,8 @@ export default function CheckoutPage() {
                       <input 
                         type="text" 
                         id="new-city" 
-                        value={contact.city}
-                        onChange={(e) => setContact({...contact, city: e.target.value})}
+                        value={newContact.city}
+                        onChange={(e) => setNewContact({...newContact, city: e.target.value})}
                         className="w-full p-2 border border-gray-300 rounded"
                         placeholder="City"
                       />
