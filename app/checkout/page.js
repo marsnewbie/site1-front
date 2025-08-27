@@ -574,7 +574,7 @@ export default function CheckoutPage() {
                         <td colSpan="3" className="border border-gray-300 p-2 text-right font-bold">Sub‑Total:</td>
                         <td className="border border-gray-300 p-2 text-center font-bold">£{(subtotal / 100).toFixed(2)}</td>
                       </tr>
-                      {mode === 'delivery' && quote && quote.isDeliverable && (
+                      {mode === 'delivery' && currentQuote && currentQuote.isDeliverable && (
                         <tr>
                           <td colSpan="3" className="border border-gray-300 p-2 text-right font-bold">Delivery:</td>
                           <td className="border border-gray-300 p-2 text-center font-bold">£{(deliveryFee / 100).toFixed(2)}</td>
@@ -694,11 +694,11 @@ export default function CheckoutPage() {
                           Please press "Check" button to verify the postcode before placing the order
                         </div>
                       )}
-                      {mode === 'delivery' && quote && (
-                        <div className={`text-sm mt-2 ${quote.isDeliverable ? 'text-green-600' : 'text-red-600'}`}>
-                          {quote.isDeliverable
-                            ? `Delivery fee £${(quote.feePence / 100).toFixed(2)}, minimum order £${(quote.minOrderPence / 100).toFixed(2)}`
-                            : `Not deliverable: ${quote.reason}`}
+                      {mode === 'delivery' && guestQuote && (
+                        <div className={`text-sm mt-2 ${guestQuote.isDeliverable ? 'text-green-600' : 'text-red-600'}`}>
+                          {guestQuote.isDeliverable
+                            ? `Delivery fee £${(guestQuote.feePence / 100).toFixed(2)}, minimum order £${(guestQuote.minOrderPence / 100).toFixed(2)}`
+                            : `Not deliverable: ${guestQuote.reason}`}
                         </div>
                       )}
                     </div>
@@ -1022,11 +1022,11 @@ export default function CheckoutPage() {
                           Please press "Check" button to verify the postcode before placing the order
                         </div>
                       )}
-                      {mode === 'delivery' && quote && (
-                        <div className={`text-sm mt-2 ${quote.isDeliverable ? 'text-green-600' : 'text-red-600'}`}>
-                          {quote.isDeliverable
-                            ? `Delivery fee £${(quote.feePence / 100).toFixed(2)}, minimum order £${(quote.minOrderPence / 100).toFixed(2)}`
-                            : `Not deliverable: ${quote.reason}`}
+                      {mode === 'delivery' && newQuote && (
+                        <div className={`text-sm mt-2 ${newQuote.isDeliverable ? 'text-green-600' : 'text-red-600'}`}>
+                          {newQuote.isDeliverable
+                            ? `Delivery fee £${(newQuote.feePence / 100).toFixed(2)}, minimum order £${(newQuote.minOrderPence / 100).toFixed(2)}`
+                            : `Not deliverable: ${newQuote.reason}`}
                         </div>
                       )}
                     </div>
@@ -1136,7 +1136,7 @@ export default function CheckoutPage() {
 
             <button 
               className="place-order-btn w-full bg-red-600 text-white p-3 rounded font-bold text-lg disabled:bg-gray-300 disabled:cursor-not-allowed"
-              disabled={isSubmitting || cartItems.length === 0 || !agreeTerms || (mode === 'delivery' && (!quote || !quote.isDeliverable))}
+              disabled={isSubmitting || cartItems.length === 0 || !agreeTerms || (mode === 'delivery' && (!currentQuote || !currentQuote.isDeliverable))}
               onClick={submitOrder}
             >
               {isSubmitting ? 'Processing...' : `Place ${mode === 'collection' ? 'Collection' : 'Delivery'} Order`}
