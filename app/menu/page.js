@@ -315,7 +315,14 @@ export default function MenuPage() {
         border-bottom: 1px solid #e5e5e5;
       }
       .menu-item:last-child { border-bottom: none; }
-      .menu-item .name { flex: 1; }
+      .menu-item .name-section { flex: 1; }
+      .menu-item .name { display: block; }
+      .menu-item .description { 
+        color: #666; 
+        font-size: 0.875rem; 
+        margin-top: 0.25rem; 
+        line-height: 1.3;
+      }
       .menu-item .price { margin-right: 10px; white-space: nowrap; }
       .menu-item button {
         background: #b58b4d;
@@ -856,7 +863,12 @@ export default function MenuPage() {
                     .filter((i) => i.categoryId === activeCategory)
                     .map((item) => (
                       <div key={item.id} className="menu-item">
-                        <span className="name text-lg font-semibold">{item.name}</span>
+                        <div className="name-section">
+                          <span className="name text-lg font-semibold">{item.name}</span>
+                          {item.description && (
+                            <div className="description text-sm text-gray-600 mt-1">{item.description}</div>
+                          )}
+                        </div>
                         <span className="price text-xl font-bold text-red-600">
                           £{(item.price / 100).toFixed(2)}
                         </span>
