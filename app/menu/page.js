@@ -856,9 +856,16 @@ export default function MenuPage() {
             <div className="menu-items">
               {activeCategory && (
                 <section id={`cat-${activeCategory}`}>
-                  <h3 className="bg-red-600 text-white p-3 rounded text-xl font-bold mb-4">
-                    {data.categories.find(c => c.id === activeCategory)?.name}
-                  </h3>
+                  <div className="bg-red-600 text-white p-3 rounded mb-4">
+                    <h3 className="text-xl font-bold mb-1">
+                      {data.categories.find(c => c.id === activeCategory)?.name}
+                    </h3>
+                    {data.categories.find(c => c.id === activeCategory)?.description && (
+                      <p className="text-sm text-red-100 opacity-90">
+                        {data.categories.find(c => c.id === activeCategory)?.description}
+                      </p>
+                    )}
+                  </div>
                   {data.items
                     .filter((i) => i.categoryId === activeCategory)
                     .map((item) => (
