@@ -313,7 +313,7 @@ export default function MenuPage() {
         margin-bottom: 5px;
       }
       .menu-items .category-header p {
-        font-size: 0.875rem;
+        font-size: 0.75rem;
         margin: 0;
         opacity: 0.9;
       }
@@ -329,7 +329,7 @@ export default function MenuPage() {
       .menu-item .name { display: block; }
       .menu-item .description { 
         color: #666; 
-        font-size: 0.875rem; 
+        font-size: 0.75rem; 
         margin-top: 0.25rem; 
         line-height: 1.3;
       }
