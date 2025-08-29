@@ -300,12 +300,22 @@ export default function MenuPage() {
         color: #fff;
       }
       .menu-items section { margin-bottom: 30px; }
-      .menu-items h3 {
+      .menu-items .category-header {
         background: #b58b4d;
         color: #fff;
         padding: 10px;
         border-radius: 3px;
+        margin-bottom: 15px;
+      }
+      .menu-items .category-header h3 {
         font-size: 1.25rem;
+        margin: 0;
+        margin-bottom: 5px;
+      }
+      .menu-items .category-header p {
+        font-size: 0.875rem;
+        margin: 0;
+        opacity: 0.9;
       }
       .menu-item {
         display: flex;
@@ -856,12 +866,12 @@ export default function MenuPage() {
             <div className="menu-items">
               {activeCategory && (
                 <section id={`cat-${activeCategory}`}>
-                  <div className="bg-red-600 text-white p-3 rounded mb-4">
-                    <h3 className="text-xl font-bold mb-1">
+                  <div className="category-header">
+                    <h3>
                       {data.categories.find(c => c.id === activeCategory)?.name}
                     </h3>
                     {data.categories.find(c => c.id === activeCategory)?.description && (
-                      <p className="text-sm text-red-100 opacity-90">
+                      <p>
                         {data.categories.find(c => c.id === activeCategory)?.description}
                       </p>
                     )}
