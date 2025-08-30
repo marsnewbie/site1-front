@@ -526,8 +526,8 @@ export default function CheckoutPage() {
       <Header />
 
       {/* Checkout content */}
-      <div className="max-w-7xl mx-auto py-8 px-4">
-        <div className="flex flex-wrap lg:flex-nowrap gap-6">
+      <div className="max-w-7xl mx-auto py-8">
+        <div className="flex flex-wrap lg:flex-nowrap gap-6 px-4">
           {/* Left column: method summary and cart */}
           <div className="w-full lg:w-1/2">
             {/* Delivery/Collection summary */}
