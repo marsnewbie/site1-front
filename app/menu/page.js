@@ -537,8 +537,8 @@ export default function MenuPage() {
         border: 1px solid #f5c6cb;
       }
       .row { display: flex; flex-wrap: wrap; }
-      .col-md-3 { flex: 0 0 27.5%; max-width: 27.5%; padding: 0 15px; }
-      .col-md-6 { flex: 0 0 45%; max-width: 45%; padding: 0 15px; }
+      .col-md-3 { flex: 0 0 20%; max-width: 20%; padding: 0 10px; }
+      .col-md-6 { flex: 0 0 55%; max-width: 55%; padding: 0 10px; }
       @media (max-width: 768px) {
         .col-md-3, .col-md-6 { flex: 0 0 100%; max-width: 100%; }
         .order-panel { position: static; }
@@ -832,7 +832,7 @@ export default function MenuPage() {
       <Header />
 
       {/* Main Layout - Three Columns */}
-      <div className="container mx-auto py-8">
+      <div className="max-w-7xl mx-auto py-8 px-4">
         <div className="row flex">
           {/* Left Sidebar - Categories */}
           <div className="col-md-3">

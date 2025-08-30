@@ -526,10 +526,10 @@ export default function CheckoutPage() {
       <Header />
 
       {/* Checkout content */}
-      <div className="container mx-auto py-8">
-        <div className="row flex">
+      <div className="max-w-7xl mx-auto py-8 px-4">
+        <div className="flex flex-wrap lg:flex-nowrap gap-6">
           {/* Left column: method summary and cart */}
-          <div className="col-md-6">
+          <div className="w-full lg:w-1/2">
             {/* Delivery/Collection summary */}
             <div className="summary-box border border-gray-300 bg-gray-50 p-4 rounded mb-6">
               <div className="summary-header flex justify-between items-center bg-red-600 text-white p-3 rounded mb-4">
@@ -614,7 +614,7 @@ export default function CheckoutPage() {
           </div>
 
           {/* Right column: Account details, voucher, payment */}
-          <div className="col-md-6">
+          <div className="w-full lg:w-1/2">
             {/* Account & Billing Details */}
             <div className="summary-box border border-gray-300 bg-gray-50 p-4 rounded mb-6">
               <div className="summary-header bg-red-600 text-white p-3 rounded mb-4">
