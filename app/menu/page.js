@@ -184,18 +184,29 @@ export default function MenuPage() {
     // Use opening hours from API response
     let openingPeriods = [];
     
+    console.log('Opening hours data:', openingHours);
+    console.log('Current UK time:', ukTime.toTimeString().slice(0,8));
+    console.log('Current time in minutes:', currentTime);
+    
     if (openingHours.isOpen) {
       // Store is open, use the provided hours
       if (openingHours.hours && Array.isArray(openingHours.hours)) {
+        console.log('Processing opening hours:', openingHours.hours);
         openingPeriods = openingHours.hours.map(period => {
           const [openHour, openMin] = period.open_time.split(':').map(Number);
           const [closeHour, closeMin] = period.close_time.split(':').map(Number);
           
+          const startMinutes = openHour * 60 + openMin;
+          const endMinutes = closeHour * 60 + closeMin;
+          
+          console.log(`Period: ${period.open_time}-${period.close_time} => ${startMinutes}-${endMinutes} minutes`);
+          
           return {
-            start: openHour * 60 + openMin,
-            end: closeHour * 60 + closeMin
+            start: startMinutes,
+            end: endMinutes
           };
         });
+        console.log('Converted opening periods:', openingPeriods);
       }
     } else {
       // Store is closed, but still show time slots for future orders
@@ -244,6 +255,10 @@ export default function MenuPage() {
       // Calculate latest available time (closing time - buffer)
       const latestTime = period.end - bufferMinutes;
       
+      if (earliestTime > latestTime) {
+        return; // No slots available in this period
+      }
+      
       // Generate 15-minute interval slots
       const interval = 15;
       let slotTime = Math.ceil(earliestTime / interval) * interval;
@@ -272,6 +287,61 @@ export default function MenuPage() {
         slotTime += interval;
       }
     });
+    
+    // If no slots were generated for today, try tomorrow
+    if (timeSlots.length === 1) { // Only 'ASAP'
+      const tomorrow = new Date(ukTime);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const tomorrowDay = tomorrow.getDay();
+      
+      // Fetch tomorrow's hours (synchronously for now, could be optimized)
+      // For now, assume same pattern - in production you'd fetch tomorrow's data
+      if (openingHours.hours && Array.isArray(openingHours.hours)) {
+        openingHours.hours.forEach(period => {
+          const [openHour, openMin] = period.open_time.split(':').map(Number);
+          const [closeHour, closeMin] = period.close_time.split(':').map(Number);
+          
+          const tomorrowStart = openHour * 60 + openMin;
+          const tomorrowEnd = closeHour * 60 + closeMin;
+          
+          // Calculate latest available time (closing time - buffer)
+          const latestTime = tomorrowEnd - bufferMinutes;
+          
+          // Generate slots starting from opening + prep time
+          const earliestTime = tomorrowStart + prepTime;
+          
+          if (earliestTime <= latestTime) {
+            // Generate 15-minute interval slots
+            const interval = 15;
+            let slotTime = Math.ceil(earliestTime / interval) * interval;
+            
+            while (slotTime <= latestTime) {
+              let hours = Math.floor(slotTime / 60);
+              const minutes = slotTime % 60;
+              
+              // Handle midnight (24:00 = 0:00 next day)
+              if (hours >= 24) {
+                hours = hours - 24;
+              }
+              
+              // Format time display
+              const ampm = hours >= 12 ? 'PM' : 'AM';
+              const displayHours = hours === 0 ? 12 : (hours > 12 ? hours - 12 : hours);
+              const displayMinutes = minutes.toString().padStart(2, '0');
+              
+              const timeString = `${displayHours}:${displayMinutes} ${ampm}`;
+              
+              // Avoid duplicates
+              if (!timeSlots.includes(timeString)) {
+                timeSlots.push(timeString);
+              }
+              
+              slotTime += interval;
+            }
+          }
+        });
+      }
+    }
     
     return timeSlots;
   };
