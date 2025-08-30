@@ -1160,10 +1160,6 @@ export default function CheckoutPage() {
               </label>
             </div>
 
-            {/* Debug info - remove after testing */}
-            <div className="text-xs text-gray-500 mb-2">
-              Debug: loading={loading.toString()}, isSubmitting={isSubmitting.toString()}, cartItems={cartItems.length}, agreeTerms={agreeTerms.toString()}, accountType={accountType}
-            </div>
 
             <button 
               className="place-order-btn w-full bg-red-600 text-white p-3 rounded font-bold text-lg disabled:bg-gray-300 disabled:cursor-not-allowed"
