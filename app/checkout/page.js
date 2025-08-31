@@ -145,23 +145,21 @@ export default function CheckoutPage() {
         // Use AuthContext to save login state
         login(data.user, data.token);
         
-        // Pre-fill returning customer form with user data
+        // Pre-fill returning customer form with user data (but NOT postcode - user must enter current delivery address)
         setReturningContact({
           firstName: data.user.firstName || '',
           lastName: data.user.lastName || '',
           email: data.user.email || '',
           phone: data.user.telephone || '',
-          postcode: data.user.postcode || '',
-          address: data.user.address || '',
-          street: data.user.street_name || '',
-          address2: data.user.address2 || '',
-          city: data.user.city || ''
+          postcode: '', // Don't pre-fill postcode - require user to enter current delivery address
+          address: '',  // Don't pre-fill address - require user to enter current delivery address
+          street: '',   // Don't pre-fill street - require user to enter current delivery address
+          address2: '',
+          city: ''      // Don't pre-fill city - require user to enter current delivery address
         });
         
-        // If delivery mode and user has postcode, trigger quote check
-        if (mode === 'delivery' && data.user.postcode) {
-          fetchQuoteForType('returning', data.user.postcode, subtotal);
-        }
+        // Reset returning quote since we're not pre-filling postcode
+        setReturningQuote(null);
         
         setMessage('Login successful! Your information has been loaded.');
         
@@ -187,17 +185,17 @@ export default function CheckoutPage() {
         // Logged in users default to 'returning' account type
         setAccountType('returning');
         
-        // Auto-fill returning customer form with user data
+        // Auto-fill returning customer form with user data (but NOT postcode - user must enter current delivery address)
         setReturningContact({
           firstName: user.firstName || '',
           lastName: user.lastName || '', 
           email: user.email || '',
           phone: user.telephone || '',
-          postcode: user.postcode || '',
-          address: user.address || '',
-          street: user.street_name || '',
-          address2: user.address2 || '',
-          city: user.city || ''
+          postcode: '', // Don't pre-fill postcode - require user to enter current delivery address
+          address: '',  // Don't pre-fill address - require user to enter current delivery address
+          street: '',   // Don't pre-fill street - require user to enter current delivery address
+          address2: '',
+          city: ''      // Don't pre-fill city - require user to enter current delivery address
         });
       } else {
         // Not logged in users default to 'guest'
@@ -823,6 +821,11 @@ export default function CheckoutPage() {
                           <label htmlFor="returning-postcode" className="block mb-2 font-semibold">
                             Post Code{mode === 'delivery' ? <span className="text-red-500">*</span> : ''}:
                           </label>
+                          {mode === 'delivery' && (
+                            <p className="text-sm text-gray-600 mb-2">
+                              Please enter your current delivery address.
+                            </p>
+                          )}
                           <div className="flex space-x-2">
                             <input 
                               type="text" 
