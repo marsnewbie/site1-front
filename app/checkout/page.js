@@ -96,8 +96,10 @@ export default function CheckoutPage() {
       const savedDeliveryInfo = sessionStorage.getItem('deliveryInfo');
       
       // Apply saved data to correct account type form
+      console.log('sessionStorage useEffect - savedPostcode:', savedPostcode, 'isAuthenticated:', isAuthenticated);
       if (savedPostcode) {
         if (isAuthenticated) {
+          console.log('Setting returningContact postcode from sessionStorage:', savedPostcode);
           setReturningContact(prev => ({ ...prev, postcode: savedPostcode }));
         } else {
           setGuestContact(prev => ({ ...prev, postcode: savedPostcode }));
@@ -187,18 +189,23 @@ export default function CheckoutPage() {
         setAccountType('returning');
         
         // Auto-fill returning customer form with user data (postcode will be handled by sessionStorage useEffect)
-        setReturningContact(prev => ({
-          ...prev, // Keep any postcode from sessionStorage
-          firstName: user.firstName || '',
-          lastName: user.lastName || '', 
-          email: user.email || '',
-          phone: user.telephone || '',
-          // Don't override postcode - let sessionStorage useEffect handle it
-          address: '',  // Don't pre-fill address - require user to enter current delivery address
-          street: '',   // Don't pre-fill street - require user to enter current delivery address
-          address2: '',
-          city: ''      // Don't pre-fill city - require user to enter current delivery address
-        }));
+        console.log('useEffect [auth] - setting returningContact, current prev:', returningContact);
+        setReturningContact(prev => {
+          const newContact = {
+            ...prev, // Keep any postcode from sessionStorage
+            firstName: user.firstName || '',
+            lastName: user.lastName || '', 
+            email: user.email || '',
+            phone: user.telephone || '',
+            // Don't override postcode - let sessionStorage useEffect handle it
+            address: '',  // Don't pre-fill address - require user to enter current delivery address
+            street: '',   // Don't pre-fill street - require user to enter current delivery address
+            address2: '',
+            city: ''      // Don't pre-fill city - require user to enter current delivery address
+          };
+          console.log('useEffect [auth] - new returningContact:', newContact);
+          return newContact;
+        });
       } else {
         // Not logged in users default to 'guest'
         setAccountType('guest');
