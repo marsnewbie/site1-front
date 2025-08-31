@@ -18,18 +18,9 @@ export default function HomePage() {
         
         // Prefetch in background, don't wait for completion
         Promise.all([
-          fetch(`${apiUrl}/api/store/config`, { 
-            cache: 'force-cache',
-            next: { revalidate: 300 } 
-          }),
-          fetch(`${apiUrl}/api/store/hours`, { 
-            cache: 'force-cache',
-            next: { revalidate: 300 } 
-          }),
-          fetch(`${apiUrl}/api/menu`, { 
-            cache: 'force-cache',
-            next: { revalidate: 600 } 
-          })
+          fetch(`${apiUrl}/api/store/config`),
+          fetch(`${apiUrl}/api/store/hours`),
+          fetch(`${apiUrl}/api/menu`)
         ]).catch(() => {}); // Silent fail, not critical
       } catch (error) {
         // Silent fail - this is just prefetching for performance

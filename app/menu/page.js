@@ -28,15 +28,9 @@ export default function MenuPage() {
       try {
         // Load all three APIs in parallel with standard caching
         const [storeConfigRes, openingHoursRes, menuRes] = await Promise.all([
-          fetch(apiUrl + '/api/store/config', {
-            next: { revalidate: 300 } // 5分钟缓存
-          }),
-          fetch(apiUrl + '/api/store/hours', {
-            next: { revalidate: 300 } // 5分钟缓存  
-          }),
-          fetch(apiUrl + '/api/menu', {
-            next: { revalidate: 300 } // 5分钟缓存菜单数据
-          })
+          fetch(apiUrl + '/api/store/config'),
+          fetch(apiUrl + '/api/store/hours'),
+          fetch(apiUrl + '/api/menu')
         ]);
         
         // Handle store config
