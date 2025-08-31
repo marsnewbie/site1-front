@@ -145,18 +145,19 @@ export default function CheckoutPage() {
         // Use AuthContext to save login state
         login(data.user, data.token);
         
-        // Pre-fill returning customer form with user data (but NOT postcode - user must enter current delivery address)
-        setReturningContact({
+        // Pre-fill returning customer form with user data (preserve any postcode from shopping cart)
+        setReturningContact(prev => ({
+          ...prev, // Keep any postcode from sessionStorage
           firstName: data.user.firstName || '',
           lastName: data.user.lastName || '',
           email: data.user.email || '',
           phone: data.user.telephone || '',
-          postcode: '', // Don't pre-fill postcode - require user to enter current delivery address
+          // Don't override postcode - keep the one from sessionStorage
           address: '',  // Don't pre-fill address - require user to enter current delivery address
           street: '',   // Don't pre-fill street - require user to enter current delivery address
           address2: '',
           city: ''      // Don't pre-fill city - require user to enter current delivery address
-        });
+        }));
         
         // Reset returning quote since we're not pre-filling postcode
         setReturningQuote(null);
@@ -185,18 +186,19 @@ export default function CheckoutPage() {
         // Logged in users default to 'returning' account type
         setAccountType('returning');
         
-        // Auto-fill returning customer form with user data (but NOT postcode - user must enter current delivery address)
-        setReturningContact({
+        // Auto-fill returning customer form with user data (postcode will be handled by sessionStorage useEffect)
+        setReturningContact(prev => ({
+          ...prev, // Keep any postcode from sessionStorage
           firstName: user.firstName || '',
           lastName: user.lastName || '', 
           email: user.email || '',
           phone: user.telephone || '',
-          postcode: '', // Don't pre-fill postcode - require user to enter current delivery address
+          // Don't override postcode - let sessionStorage useEffect handle it
           address: '',  // Don't pre-fill address - require user to enter current delivery address
           street: '',   // Don't pre-fill street - require user to enter current delivery address
           address2: '',
           city: ''      // Don't pre-fill city - require user to enter current delivery address
-        });
+        }));
       } else {
         // Not logged in users default to 'guest'
         setAccountType('guest');
